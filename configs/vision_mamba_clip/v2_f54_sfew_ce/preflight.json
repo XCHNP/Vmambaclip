@@ -1,0 +1,15 @@
+{
+  "runs": [
+    {
+      "run_id": "sfew/native_ce",
+      "state": "assets_verified",
+      "gpu_available": true
+    },
+    {
+      "run_id": "sfew/hybrid_ce",
+      "state": "assets_verified",
+      "gpu_available": true
+    }
+  ],
+  "formal_training_started": false
+}

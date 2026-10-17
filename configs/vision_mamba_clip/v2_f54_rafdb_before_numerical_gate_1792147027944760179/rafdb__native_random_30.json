@@ -1,0 +1,197 @@
+{
+  "schema_version": 2,
+  "run_id": "rafdb/native_random_30",
+  "seed": 42,
+  "head_seed": 1042,
+  "dataset": "rafdb",
+  "class_order": [
+    "Angry",
+    "Disgusted",
+    "Fearful",
+    "Happy",
+    "Neutral",
+    "Sad",
+    "Surprised"
+  ],
+  "student": {
+    "architecture": "vim_native_ce",
+    "official_model_name": "vim_small_patch16_224_bimambav2_final_pool_mean_abs_pos_embed_with_midclstok_div2",
+    "source_revision": "dd0358ad1e42701f22afbefa0717cc8825cf9f45",
+    "initialization": "random",
+    "pretrained": {
+      "path": "/root/autodl-tmp/open_clip-main/artifacts/vim_v2_20261016/assets/vim_s_midclstok_80p5acc.pth",
+      "sha256": "aae4583e2def6389b66cfaf292cfade47a873182a39adbec19ec55b730ea9fe3",
+      "model_name": "vim_small_patch16_224_bimambav2_final_pool_mean_abs_pos_embed_with_midclstok_div2",
+      "source": "https://huggingface.co/hustvl/Vim-small-midclstok/resolve/babc4440f5fab6e08d97e371afa639c8cf98bf2c/vim_s_midclstok_80p5acc.pth"
+    },
+    "cnn_pretrained": null,
+    "cnn_initialization": null,
+    "input_size": 256,
+    "layer_indices": [
+      21,
+      22,
+      23
+    ],
+    "feature_readout": "official_final_norm_middle_cls",
+    "cls_position_policy": "middle",
+    "drop_path_rate": 0.1,
+    "gradient_checkpointing": true
+  },
+  "data": {
+    "path": "/root/autodl-tmp/open_clip-main/artifacts/preprocessed/rafdb/manifest.json",
+    "sha256": "3b1b918a51351a0812db2ccb5085810a11b4172118cd83e21b34b2fbeeeeaebb",
+    "manifest_hash": "7e8bbb8985416b83d439f8a25aae74f1dacbd1021d4a94485a846d38ace6758b"
+  },
+  "teachers": {
+    "t1": {
+      "path": "/root/autodl-fs/fer_suite_simplified_20261013/rafdb/teacher_t1/best.pt",
+      "sha256": "593123273182b41a8f1f8866b21cac18d5393174b68f22b0e4fd2f895ece9813",
+      "completion": {
+        "path": "/root/autodl-fs/fer_suite_simplified_20261013/rafdb/teacher_t1/status.json",
+        "sha256": "86ca61f38735fe08b729afb21c8b001a2426c74eafc3e4cffed05d1afb9f31cf"
+      }
+    },
+    "t2": {
+      "path": "/root/autodl-fs/fer_suite_simplified_20261013/rafdb/teacher_t2/best.pt",
+      "sha256": "7400e45653f27104832565e3cfe8dd83a8f5e8515a68780ba6a4c9e73caf4339",
+      "completion": {
+        "path": "/root/autodl-fs/fer_suite_simplified_20261013/rafdb/teacher_t2/status.json",
+        "sha256": "82f492b7208bcacf9af1b7246690a88dc16cb815ce8a067b759f0d19582d9a24"
+      }
+    }
+  },
+  "clip_base": {
+    "path": "/root/autodl-tmp/open_clip-main/src/pretrained_models/ViT-L-14.pt",
+    "sha256": "b8cca3fd41ae0c99ba7e8951adf17d267cdb84cd88be6f7c2e0eca1737a03836"
+  },
+  "batch_size": 32,
+  "workers": 4,
+  "optimizer": {
+    "backbone_lr": 3e-05,
+    "new_lr": 0.0003,
+    "weight_decay": 0.01,
+    "betas": [
+      0.9,
+      0.98
+    ],
+    "eps": 1e-06,
+    "grad_clip": 1.0,
+    "amp": "bf16_if_supported_else_fp32"
+  },
+  "schedule": {
+    "total_updates": 10350,
+    "steps_per_epoch": 345,
+    "warmup_updates": 518,
+    "min_lr_ratio": 0.01,
+    "transition_source": "last",
+    "optimizer_reset": false,
+    "scheduler_reset": false
+  },
+  "stages": [
+    {
+      "name": "s2",
+      "epochs": 30,
+      "teacher": null,
+      "loss": {
+        "ce": 1.0,
+        "feature": 0.0,
+        "logits": 0.0,
+        "temperature": 2.0,
+        "au": 0.0,
+        "weight_align": 0.0,
+        "semantic": 0.0,
+        "kl_direction": "teacher||student",
+        "feature_target": "CLIP_projected_global"
+      }
+    }
+  ],
+  "preprocess": {
+    "geometry_version": "shared_rgb256_rrc09_flip05_v2",
+    "student_normalize": "ImageNet",
+    "teacher_normalize": "CLIP",
+    "train_crop_scale": [
+      0.9,
+      1.0
+    ],
+    "train_crop_ratio": [
+      0.75,
+      1.3333333333333333
+    ],
+    "flip_probability": 0.5,
+    "evaluation": "Resize256_CenterCrop256_bicubic",
+    "student_mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "student_std": [
+      0.229,
+      0.224,
+      0.225
+    ],
+    "teacher_mean": [
+      0.48145466,
+      0.4578275,
+      0.40821073
+    ],
+    "teacher_std": [
+      0.26862954,
+      0.26130258,
+      0.27577711
+    ],
+    "resize_size": 256,
+    "eval_crop_size": 256,
+    "rgb": true,
+    "interpolation": "bicubic",
+    "antialias": true,
+    "train_drop_last": true,
+    "eval_drop_last": false,
+    "ce_weighting": "unweighted"
+  },
+  "output": "/root/autodl-fs/fer_suite_v2_pretrained_20261016/rafdb/native_random_30",
+  "init_id": "vim_native_ce_random_seed42",
+  "init_path": "/root/autodl-fs/fer_suite_v2_pretrained_20261016/initializations/vim_native_ce_random_seed42.pt",
+  "checkpoint": {
+    "resume_contract": "epoch_boundary_only",
+    "selection": [
+      "max_uar",
+      "max_accuracy",
+      "earlier_epoch"
+    ],
+    "s1_selection": "min_feature_loss"
+  },
+  "code": {
+    "vim_v2/__init__.py": "8427899774cc4e195357a31424fbe0475f9d436386a95b1290717a8903bb1aff",
+    "vim_v2/__main__.py": "3159f1831b1217ef59840d76ae882838806458f758001baece31a9aeb44cae6b",
+    "vim_v2/acceptance.py": "87f117e487b5726e18e2dd569a8f0bab6c4e913b4c08f8465ccc6ed29e744794",
+    "vim_v2/checkpoint.py": "5a41b26a73b5f07b9f830e3e068f7894161f36cf05268617a91778def2520368",
+    "vim_v2/common.py": "3b5af5e3ccf5c34ccd2f17f6e03a439de92fa605172e43c6ca6eb4a4f80ff6c3",
+    "vim_v2/config.py": "f9939e4316602d55b0dd95c915bc6cb22381d8c009f903d105139f7cca800fa0",
+    "vim_v2/data.py": "4500a85768a73c6f47d16372d71710ab1a797533960941a2ae6983c1ed9d9636",
+    "vim_v2/losses.py": "f31bc0a0d2ff88d7ffae2f744ba53668af01a08c2c6d163ae8c708ded2acd8f7",
+    "vim_v2/models.py": "6e2661db69d4961fd5d553c6cb4655ce8811ca98d63d4d0285241df41c8faa9c",
+    "vim_v2/optim.py": "456439fbb720a195afe5dabfaf2e19ea78a44d35763bf206ce9d2979b8869799",
+    "vim_v2/runtime.py": "1029b87aa9145e3168eaa36a644f773f80317ad17f04d697e03329786d746eed",
+    "src/open_clip/vision_mamba_clip/official_vim.py": "7aa2282cce37f28f8c7e201483fba02ea7c822396030af194af1dd6b2f8d15cd",
+    "src/open_clip/vision_mamba_clip/model.py": "f72eeb070d733ba209e32a86cbe33171d50b6936ed3c98336e1906aa897a7395",
+    "src/open_clip/vision_mamba_clip/adapters.py": "e98d4e42b1a679310c333717dee5b464fdbb9c644b3f2ce1e204a0b2d32358c7",
+    "src/open_clip/vision_mamba_clip/data.py": "eba58ec62931d85164abdce48ef42f24503fbc17451b98301dd1f92e1df88294",
+    "third_party/Vim/vim/models_mamba.py": "f32a57266f9c5e2824f51cded579f6a5eb722001d5f1cad3ea7e7179ab55f0f5",
+    "third_party/Vim/official_source.json": "449c29da9d51a59c10a64df8819dbb59e4c80d41a9faba91e8ed2f410d5d1e98"
+  },
+  "environment": {
+    "python": "3.8.20 (default, Oct  3 2024, 15:24:27) \n[GCC 11.2.0]",
+    "versions": {
+      "torch": "2.4.1+cu118",
+      "torchvision": "0.19.1+cu118",
+      "timm": "1.0.15",
+      "mamba-ssm": "1.1.1",
+      "causal-conv1d": "1.4.0",
+      "numpy": "1.24.3",
+      "Pillow": "10.4.0"
+    },
+    "cuda_build": "11.8",
+    "cuda_available": true,
+    "devices": 1
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "runs": [
+    {
+      "run_id": "sfew/native_ce",
+      "updates": 1150,
+      "epochs": 50,
+      "estimated_gpu_hours": 0.08721675049410907,
+      "basis": "measured warm GPU steps + extrapolated selection + atomic-save disk reserve",
+      "estimated_disk_bytes": 712244932,
+      "peak_gpu_bytes": 1076882432
+    },
+    {
+      "run_id": "sfew/hybrid_ce",
+      "updates": 1150,
+      "epochs": 50,
+      "estimated_gpu_hours": 0.0840624303783207,
+      "basis": "measured warm GPU steps + extrapolated selection + atomic-save disk reserve",
+      "estimated_disk_bytes": 1027696096,
+      "peak_gpu_bytes": 1708574208
+    }
+  ],
+  "estimated_gpu_hours": 0.17127918087242977,
+  "disk_estimate_partial_bytes": 1739941028,
+  "free_bytes": 45979283456,
+  "includes_teacher_preparation": false,
+  "extra_disk_reserve_bytes": 4294967296,
+  "ready_for_all_runs": true
+}

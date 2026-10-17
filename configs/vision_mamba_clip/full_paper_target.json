@@ -1,0 +1,105 @@
+{
+  "profile": "full_paper_target",
+  "protocol": {
+    "num_classes": 7,
+    "image_size": 256,
+    "semantic_anchor_interpretation": "E: K=C, one sourced AU description per class",
+    "source": "P unless fields are explicitly marked E or W/E"
+  },
+  "teacher": {
+    "architecture": "ViT-L-14",
+    "checkpoint": null,
+    "checkpoint_status": "R: required ViT-L/14 weights are absent from this snapshot",
+    "freeze_text_encoder": true,
+    "t1_train_visual_and_logit_scale": true,
+    "t2_train_visual_and_linear_head": true
+  },
+  "student": {
+    "family": "bidirectional_vim",
+    "factory": null,
+    "checkpoint": null,
+    "checkpoint_status": "R: real Vim implementation and checkpoint are absent",
+    "selected_layers": "last_three",
+    "num_special_tokens": 1,
+    "attention_heads": 8,
+    "cnn": "resnet18_layer3",
+    "cnn_initialization": "E: random unless a real source is supplied and recorded",
+    "use_cnn": true,
+    "use_coords": false,
+    "attention_parameterization": "E: softplus(logits)+epsilon",
+    "fusion": "concat_projection",
+    "classifier_input": "E: concat(e,m,l,fused)",
+    "train_text_projection": true
+  },
+  "data": {
+    "dataset": "RAF-DB",
+    "root": "RAF_DB",
+    "class_order": "discover_from_actual_directories",
+    "validation_ratio": 0.1,
+    "validation_seed": 42,
+    "validation_source": "E: deterministic stratified split from Train",
+    "au_prompt_schema": null,
+    "formal_training_ready": false,
+    "normalization": "read from actual CLIP checkpoint"
+  },
+  "checkpoints": {
+    "teacher_t1": null,
+    "teacher_t2": null,
+    "student_s1": null,
+    "student_s2": null
+  },
+  "stage1": {
+    "lambda_it": 1.0,
+    "lambda_align": 1.0,
+    "lambda_cnn": 1.0,
+    "lambda_tv": 0.0001,
+    "lambda_sparse": 0.001,
+    "layer_weights": [0.3333333333, 0.3333333333, 0.3333333334],
+    "tau_it": 2.0,
+    "epochs": 20,
+    "epochs_source": "E: paper does not allocate 20 epochs to each stage"
+  },
+  "stage2": {
+    "lambda_task": 1.0,
+    "lambda_distill": 0.2,
+    "beta_logit": 1.0,
+    "lambda_anchor": 0.05,
+    "lambda_au": 0.1,
+    "gamma_sparse": 0.001,
+    "tau_logit": 2.0,
+    "tau_low": 0.1,
+    "detach_spatial_target": true,
+    "epochs": 20,
+    "epochs_source": "E: paper does not allocate 20 epochs to each stage"
+  },
+  "optimizer": {
+    "name": "AdamW",
+    "lr": 0.0001,
+    "betas": [0.9, 0.98],
+    "eps": 0.000001,
+    "weight_decay": 0.01,
+    "weight_decay_source": "E",
+    "batch_size": 32,
+    "gradient_accumulation_steps": 1,
+    "gradient_clipping": null,
+    "scheduler": "cosine",
+    "paper_warmup_steps": 10000,
+    "strict_warmup": true,
+    "amp_dtype": "bfloat16",
+    "gradient_checkpointing": true
+  },
+  "stage_epochs": {
+    "teacher_t1": 20,
+    "teacher_t2": 20,
+    "student_s1": 20,
+    "student_s2": 20,
+    "source": "E: the paper does not allocate its reported 20 epochs across four stages"
+  },
+  "stage_controls": {
+    "teacher_t1": {},
+    "teacher_t2": {},
+    "student_s1": {},
+    "student_s2": {}
+  },
+  "epsilon": 0.000001
+}

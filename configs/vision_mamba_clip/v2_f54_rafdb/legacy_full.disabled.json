@@ -1,0 +1,8 @@
+{
+  "enabled": false,
+  "entry": "artifacts/training_prepare_20261013/fer_expanded.py",
+  "name": "legacy_full",
+  "kl": "student||teacher",
+  "transition": "S1 best, rebuild Adam",
+  "warning": "Not V2 or a single-loss-factor comparison"
+}

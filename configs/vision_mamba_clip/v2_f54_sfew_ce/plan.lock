@@ -1,0 +1,70 @@
+{
+  "plan_sha256": "d3dd9846660227e600bd707ee0f9fbcfec69322ded264383303b4b72c8689513",
+  "code": {
+    "vim_v2/__init__.py": "8427899774cc4e195357a31424fbe0475f9d436386a95b1290717a8903bb1aff",
+    "vim_v2/__main__.py": "3159f1831b1217ef59840d76ae882838806458f758001baece31a9aeb44cae6b",
+    "vim_v2/acceptance.py": "f020aad232068ec33daeded276af28871b532867265f47c2f37437401b1f4c5c",
+    "vim_v2/checkpoint.py": "5a41b26a73b5f07b9f830e3e068f7894161f36cf05268617a91778def2520368",
+    "vim_v2/common.py": "3b5af5e3ccf5c34ccd2f17f6e03a439de92fa605172e43c6ca6eb4a4f80ff6c3",
+    "vim_v2/config.py": "c26fccb36b3b64c90ebf010e21ff653fb5bce846cb8c2a91232e0456796f1c4f",
+    "vim_v2/data.py": "4500a85768a73c6f47d16372d71710ab1a797533960941a2ae6983c1ed9d9636",
+    "vim_v2/losses.py": "f31bc0a0d2ff88d7ffae2f744ba53668af01a08c2c6d163ae8c708ded2acd8f7",
+    "vim_v2/models.py": "6e2661db69d4961fd5d553c6cb4655ce8811ca98d63d4d0285241df41c8faa9c",
+    "vim_v2/optim.py": "456439fbb720a195afe5dabfaf2e19ea78a44d35763bf206ce9d2979b8869799",
+    "vim_v2/runtime.py": "598871528bfd7547ceedb65fdb8b352c88aa42ba829c0e623f0db0d0d8482328",
+    "src/open_clip/vision_mamba_clip/official_vim.py": "7aa2282cce37f28f8c7e201483fba02ea7c822396030af194af1dd6b2f8d15cd",
+    "src/open_clip/vision_mamba_clip/model.py": "f72eeb070d733ba209e32a86cbe33171d50b6936ed3c98336e1906aa897a7395",
+    "src/open_clip/vision_mamba_clip/adapters.py": "e98d4e42b1a679310c333717dee5b464fdbb9c644b3f2ce1e204a0b2d32358c7",
+    "src/open_clip/vision_mamba_clip/data.py": "eba58ec62931d85164abdce48ef42f24503fbc17451b98301dd1f92e1df88294",
+    "third_party/Vim/vim/models_mamba.py": "f32a57266f9c5e2824f51cded579f6a5eb722001d5f1cad3ea7e7179ab55f0f5",
+    "third_party/Vim/official_source.json": "449c29da9d51a59c10a64df8819dbb59e4c80d41a9faba91e8ed2f410d5d1e98"
+  },
+  "qualified_runs": [
+    "sfew/native_ce",
+    "sfew/hybrid_ce"
+  ],
+  "blocked": [],
+  "evidence": [
+    {
+      "path": "/autodl-fs/data/fer_suite_v2_pretrained_20261016/acceptance/sfew_data.json",
+      "sha256": "d73493de241ae64da3c4144ec1a0fdb0783b6f5c2ca61afb7e45861dba69e4d9"
+    },
+    {
+      "path": "/autodl-fs/data/fer_suite_v2_pretrained_20261016/acceptance/sfew__native_ce_init_gpu.json",
+      "sha256": "3878af12434013543afc215b4fcd545113b70a042f7d6987c91d918a29985760"
+    },
+    {
+      "path": "/autodl-fs/data/fer_suite_v2_pretrained_20261016/acceptance/sfew__native_ce/smoke.json",
+      "sha256": "4d969ba6fa400fd09a8662a8952f79210ae851dc3bc3636bb66eafeb8e429310"
+    },
+    {
+      "path": "/autodl-fs/data/fer_suite_v2_pretrained_20261016/acceptance/fit_36e8178153756a5416e7269e3a0ff08dc5e3b593d1c84958079cd4faf721b859.json",
+      "sha256": "f8aa1486989cbe73ccc9817f0584d4cffbc3ad419e7deb090dba46eb88cd38f7"
+    },
+    {
+      "path": "/autodl-fs/data/fer_suite_v2_pretrained_20261016/acceptance/sfew__native_ce_resume_gpu.json",
+      "sha256": "d253fecc3468034f68347eeafda4f34f657ac3215d8e8058109184b960d7d51f"
+    },
+    {
+      "path": "/autodl-fs/data/fer_suite_v2_pretrained_20261016/acceptance/sfew_data.json",
+      "sha256": "d73493de241ae64da3c4144ec1a0fdb0783b6f5c2ca61afb7e45861dba69e4d9"
+    },
+    {
+      "path": "/autodl-fs/data/fer_suite_v2_pretrained_20261016/acceptance/sfew__hybrid_ce_init_gpu.json",
+      "sha256": "565d8142974138efab7f0a15e5754f5af5d58ff288e4400fafe7e9e66b5e1870"
+    },
+    {
+      "path": "/autodl-fs/data/fer_suite_v2_pretrained_20261016/acceptance/sfew__hybrid_ce/smoke.json",
+      "sha256": "16bf85be7cfe121206f65c0d751271a38a5bc94b72eb638224a82929fc8101fe"
+    },
+    {
+      "path": "/autodl-fs/data/fer_suite_v2_pretrained_20261016/acceptance/fit_0730a9344955af222ddea67d15cb6ff0ba64a9bb773c9241464340360131cc4d.json",
+      "sha256": "53f8e889716f49f5ac42f449a7001469cd4c8ca1e7902d0261c8950a424dd61f"
+    },
+    {
+      "path": "/autodl-fs/data/fer_suite_v2_pretrained_20261016/acceptance/sfew__hybrid_ce_resume_gpu.json",
+      "sha256": "d4aef8a29ad48b086fb60fef1f7b29e8b738a947493b57e662cae314830d48a9"
+    }
+  ],
+  "final_eval_used_for_selection": false
+}

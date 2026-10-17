@@ -1,0 +1,613 @@
+{
+  "dataset": "sfew",
+  "version": 1,
+  "source": "User approved on 2026-10-13: exclude 148 duplicate training files and both conflicting final-evaluation copies; preserve all original images",
+  "evidence": "/root/autodl-tmp/open_clip-main/artifacts/preprocessed/sfew_before_cleanup_20261013/duplicate_filename_audit.json",
+  "excluded_samples": [
+    {
+      "path": "train/0/21_001108440_00000025.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/0/21_012215600_00000002.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/0/21_012224880_00000030.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/0/21_012239520_00000020.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/0/21_012246400_00000011.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/0/21_013508360_00000010.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/0/AboutABoy_012455047_00000059.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/0/Elizabeth_005618320_00000075.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/0/ExtremelyLoudIncrediblyClose_004556200_00000016.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/0/Informant_003812174_00000018.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/0/PrettyInPink_003945480_00000004.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/0/RememberMe_011000040_00000025.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/0/SilverLiningPlayBook_003123200_00000036.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/0/SilverLiningPlayBook_004739560_00000012.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/0/Unstoppable_004417618_00000027.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/21_010330280_00000013.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/AboutABoy_010940087_00000013.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/AboutABoy_012126048_00000012.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/AmericanHistoryX_000647360_00000015.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/ChangeUp_000505720_00000033.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/ChangeUp_003110680_00000003.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/Hangover_000738334_00000060.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/Hangover_010046254_00000049.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/Hangover_010046254_00000068.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/Hangover_012553854_00000031.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/Hangover_012553854_00000043.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/HauntingMollyHartely_002326760_00000018.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/HauntingMollyHartely_002326760_00000046.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/Informant_000946654_00000045.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/Informant_000946654_00000058.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/Informant_001016054_00000011.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/Informant_004436174_00000090.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/1/OrangeAndSunshine_000941320_00000033.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Hangover_001949614_00000089.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Hangover_010805134_00000008.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Hangover_010805134_00000013.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Hangover_010805134_00000019.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/HauntingMollyHartely_000633000_00000041.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/HauntingMollyHartely_005515200_00000027.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/HauntingMollyHartely_005842000_00000018.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/HauntingMollyHartely_005842000_00000034.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/HauntingMollyHartely_005859040_00000003.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/HauntingMollyHartely_005912000_00000012.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Informant_003641614_00000034.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Informant_003641614_00000058.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/RememberMe_001635160_00000012.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/RunAwayBride_003243160_00000078.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Saw3D_000322047_00000001.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Saw3D_000322047_00000005.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Saw3D_000405847_00000008.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Saw3D_000405847_00000024.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Saw3D_000502567_00000001.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Saw3D_000502567_00000010.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Saw3D_000502567_00000012.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Saw3D_000502567_00000019.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Saw3D_001731150_00000009.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Unstoppable_010135638_00000008.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Unstoppable_010135638_00000023.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/2/Unstoppable_010135638_00000028.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/21_002655360_00000052.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/21_010330280_00000006.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/21_012255920_00000022.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/AboutABoy_012331168_00000028.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/DidYouHearAboutTheMorgans_000423127_00000028.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/FriendsWithBenefit_000750480_00000012.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/FriendsWithBenefit_000803520_00000005.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/Hangover_000446654_00000015.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/Hangover_003943094_00000075.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/Hangover_010301054_00000004.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/Informant_001016054_00000001.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/Informant_001817054_00000006.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/Informant_002408334_00000034.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/Informant_004643134_00000004.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/NottingHill_010212354_00000036.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/NottingHill_010958154_00000049.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/OrangeAndSunshine_000459400_00000019.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/PrettyInPink_001802800_00000013.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/PrettyInPink_001809040_00000016.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/PrettyWoman_003443960_00000029.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/RememberMe_004008240_00000029.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/Unstoppable_004509838_00000021.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/4/Unstoppable_010135638_00000032.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/21_012212720_00000008.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/21_012246400_00000087.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/21_013508360_00000064.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/AboutABoy_004957047_00000014.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/AboutABoy_011959447_00000037.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/AboutABoy_011959447_00000060.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/AboutABoy_012126048_00000057.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/AboutABoy_012436647_00000050.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/DidYouHearAboutTheMorgans_001019207_00000056.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/ExtremelyLoudIncrediblyClose_005026400_00000002.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/FriendsWithBenefit_010010080_00000009.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/FriendsWithBenefit_013609600_00000020.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/FriendsWithBenefit_013714720_00000005.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/Hangover_011616534_00000027.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/HauntingMollyHartely_005859040_00000064.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/HauntingMollyHartely_011543240_00000046.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/Informant_000946654_00000031.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/Messengers_000142325_00000010.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/NottingHill_014424874_00000023.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/OrangeAndSunshine_000941320_00000002.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/OrangeAndSunshine_005700400_00000023.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/OrangeAndSunshine_005711000_00000004.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/OrangeAndSunshine_005711000_00000033.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/OrangeAndSunshine_011401160_00000054.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/PrettyInPink_000543360_00000011.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/PrettyInPink_000543360_00000023.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/PrettyInPink_001214360_00000003.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/PrettyInPink_002751240_00000035.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/PrettyInPink_011006040_00000004.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/PrettyInPink_011006040_00000049.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/PrettyInPink_011823760_00000027.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/PrettyInPink_011823760_00000058.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/RememberMe_011005340_00000017.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/RememberMe_011901800_00000002.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/RememberMe_013852920_00000031.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/Saw3D_003322327_00000045.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/Saw3D_010320007_00000001.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/Saw3D_010552367_00000023.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/5/SilverLiningPlayBook_002239440_00000030.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/21_001404920_00000016.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/21_001703120_00000012.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/21_002221960_00000007.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/AboutABoy_000919327_00000007.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/AboutABoy_000919327_00000013.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/AboutABoy_000919327_00000015.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/AboutABoy_002934807_00000042.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/AboutABoy_005013327_00000001.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/AboutABoy_005013327_00000008.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/AmericanHistoryX_000647360_00000052.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/Aviator_011323560_00000011.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/ChangeUp_001641600_00000006.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/ChangeUp_001850640_00000010.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/DidYouHearAboutTheMorgans_001019207_00000084.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/DidYouHearAboutTheMorgans_001019207_00000111.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/DidYouHearAboutTheMorgans_001019207_00000134.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/DidYouHearAboutTheMorgans_003555207_00000003.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/Elizabeth_004944560_00000001.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/FriendsWithBenefit_005457920_00000013.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/Hangover_000439654_00000010.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/Hangover_000439654_00000029.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/Hangover_000439654_00000046.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/Hangover_000439654_00000069.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/Hangover_002842814_00000037.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/Informant_002650134_00000047.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/Unstoppable_004406878_00000003.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "train/6/Unstoppable_004406878_00000020.png",
+      "reason": "Byte-identical to a final-evaluation source image"
+    },
+    {
+      "path": "val/3/21_001703120_00000012.png",
+      "reason": "Same bytes labeled both Happy and Surprised in final evaluation"
+    },
+    {
+      "path": "val/6/21_001703120_00000012.png",
+      "reason": "Same bytes labeled both Happy and Surprised in final evaluation"
+    }
+  ],
+  "excluded_counts_by_source": {
+    "train": 148,
+    "val": 2
+  },
+  "original_images_preserved": true
+}

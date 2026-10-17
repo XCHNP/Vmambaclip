@@ -1,0 +1,33 @@
+{
+  "schema_version": 2,
+  "runs": [
+    {
+      "run_id": "sfew/native_ce",
+      "config": "/root/autodl-tmp/open_clip-main/configs/vision_mamba_clip/v2_f54_sfew_ce/sfew__native_ce.json",
+      "config_hash": "3e86b19f781e7d61d421df01e16ffdf7546097113b00ad098cd8b242226a3a49",
+      "stages": 1,
+      "updates": 1150,
+      "dependencies": [],
+      "state": "implemented"
+    },
+    {
+      "run_id": "sfew/hybrid_ce",
+      "config": "/root/autodl-tmp/open_clip-main/configs/vision_mamba_clip/v2_f54_sfew_ce/sfew__hybrid_ce.json",
+      "config_hash": "2e7aa9da849897e3ea3a225abfc3abd19e0a7b8fb9c1a3c126fecff9a508a1b5",
+      "stages": 1,
+      "updates": 1150,
+      "dependencies": [],
+      "state": "implemented"
+    }
+  ],
+  "unique_student_paths": 2,
+  "student_stages": 2,
+  "reuse": {
+    "A4_raf_pretrained_60": "rafdb/native_ce"
+  },
+  "output_root": "/root/autodl-fs/fer_suite_v2_pretrained_20261016",
+  "core_only": true,
+  "final_protocol": "iterative development on previously observed benchmark; not a new blind test",
+  "scope": "sfew",
+  "excluded_domain": "affectnet"
+}

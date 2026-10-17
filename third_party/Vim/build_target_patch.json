@@ -1,0 +1,9 @@
+[
+  {
+    "path": "/root/autodl-tmp/open_clip-main/third_party/Vim/mamba-1p1p1/setup.py",
+    "kind": "packaging-only GPU target flags; no kernel/model changes",
+    "original_sha256": "359577876380b29f2372645b1679d1c98f0a806e69ad01dc783a18ac64dc5dec",
+    "patched_sha256": "c13d934ca121c3d42d964127d6db2979789e0370df98e479db9be9908b351ef8",
+    "cuda_arch": "sm89"
+  }
+]

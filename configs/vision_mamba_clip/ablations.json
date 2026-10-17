@@ -1,0 +1,21 @@
+{
+  "base": "full_paper_target.json",
+  "rule": "Each named ablation changes only the listed field(s).",
+  "ablations": {
+    "no_cnn": {
+      "student.use_cnn": false,
+      "stage1.lambda_cnn": 0.0,
+      "stage1.lambda_tv": 0.0,
+      "stage1.lambda_sparse": 0.0,
+      "stage2.lambda_au": 0.0
+    },
+    "no_s1": {"pipeline.skip_student_s1": true},
+    "no_logit_distillation": {"stage2.beta_logit": 0.0},
+    "no_weight_alignment": {"stage2.lambda_anchor": 0.0},
+    "no_au_spatial": {"stage2.lambda_au": 0.0},
+    "class_name_text": {"data.text_mode": "explicit_class_name_ablation"},
+    "coordinate_attention": {"student.use_coords": true},
+    "frozen_phi": {"student.train_text_projection": false},
+    "spatial_target_with_gradient": {"stage2.detach_spatial_target": false}
+  }
+}

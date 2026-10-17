@@ -1,0 +1,94 @@
+{
+  "schema_version": 2,
+  "runs": [
+    {
+      "run_id": "rafdb/native_random_30",
+      "config": "/root/autodl-tmp/open_clip-main/configs/vision_mamba_clip/v2_f54_rafdb/rafdb__native_random_30.json",
+      "config_hash": "fd464aed3054b39bbb0d6a644df87535c8722902dbb2d8df9b09f38cb69de799",
+      "stages": 1,
+      "updates": 10350,
+      "dependencies": [],
+      "state": "implemented"
+    },
+    {
+      "run_id": "rafdb/native_pretrained_30",
+      "config": "/root/autodl-tmp/open_clip-main/configs/vision_mamba_clip/v2_f54_rafdb/rafdb__native_pretrained_30.json",
+      "config_hash": "85447671bc907b70def3c1877722297ef6143936b0f258fc7b3a62e4e25d179d",
+      "stages": 1,
+      "updates": 10350,
+      "dependencies": [],
+      "state": "implemented"
+    },
+    {
+      "run_id": "rafdb/native_random_60",
+      "config": "/root/autodl-tmp/open_clip-main/configs/vision_mamba_clip/v2_f54_rafdb/rafdb__native_random_60.json",
+      "config_hash": "a9c6d126698a9e641d4666ff9972e70acdebe6649df55e3cc7bb42e11765fa4a",
+      "stages": 1,
+      "updates": 20700,
+      "dependencies": [],
+      "state": "implemented"
+    },
+    {
+      "run_id": "rafdb/native_ce",
+      "config": "/root/autodl-tmp/open_clip-main/configs/vision_mamba_clip/v2_f54_rafdb/rafdb__native_ce.json",
+      "config_hash": "530bbf6737b319dfffc59e0b2a92071ccd2f1ad1bed9ce3d932a1bb47c9f4029",
+      "stages": 1,
+      "updates": 20700,
+      "dependencies": [],
+      "state": "implemented"
+    },
+    {
+      "run_id": "rafdb/hybrid_ce",
+      "config": "/root/autodl-tmp/open_clip-main/configs/vision_mamba_clip/v2_f54_rafdb/rafdb__hybrid_ce.json",
+      "config_hash": "24f95c44e6020b03ea8cddebec40ed59269f53b2e8f94eae2e2f7ba5f47c1ec8",
+      "stages": 1,
+      "updates": 20700,
+      "dependencies": [],
+      "state": "implemented"
+    },
+    {
+      "run_id": "rafdb/hybrid_logits_kd",
+      "config": "/root/autodl-tmp/open_clip-main/configs/vision_mamba_clip/v2_f54_rafdb/rafdb__hybrid_logits_kd.json",
+      "config_hash": "9c4115820e3eba5d8439dba1269df5d79f122f7dcd28964421b04c9a9a8c2df6",
+      "stages": 1,
+      "updates": 20700,
+      "dependencies": [
+        "rafdb/t2"
+      ],
+      "state": "implemented"
+    },
+    {
+      "run_id": "rafdb/hybrid_feature_kd",
+      "config": "/root/autodl-tmp/open_clip-main/configs/vision_mamba_clip/v2_f54_rafdb/rafdb__hybrid_feature_kd.json",
+      "config_hash": "9ab55177bbf0aae701e8a6f6ddcf3bc0c20b22ffd8fc4dc9cef096611a7fb379",
+      "stages": 1,
+      "updates": 20700,
+      "dependencies": [
+        "rafdb/t2"
+      ],
+      "state": "implemented"
+    },
+    {
+      "run_id": "rafdb/full_v2",
+      "config": "/root/autodl-tmp/open_clip-main/configs/vision_mamba_clip/v2_f54_rafdb/rafdb__full_v2.json",
+      "config_hash": "9b84f315143d82275cbbce644aa107dc72f01af56c38a702af57fe6558514fac",
+      "stages": 2,
+      "updates": 20700,
+      "dependencies": [
+        "rafdb/t1",
+        "rafdb/t2"
+      ],
+      "state": "implemented"
+    }
+  ],
+  "unique_student_paths": 8,
+  "student_stages": 9,
+  "reuse": {
+    "A4_raf_pretrained_60": "rafdb/native_ce"
+  },
+  "output_root": "/root/autodl-fs/fer_suite_v2_pretrained_20261016",
+  "core_only": true,
+  "final_protocol": "iterative development on previously observed benchmark; not a new blind test",
+  "scope": "rafdb",
+  "excluded_domain": "affectnet"
+}

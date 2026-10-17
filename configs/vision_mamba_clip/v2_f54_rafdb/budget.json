@@ -1,0 +1,82 @@
+{
+  "runs": [
+    {
+      "run_id": "rafdb/native_random_30",
+      "updates": 10350,
+      "epochs": 30,
+      "estimated_gpu_hours": 0.7591824330633244,
+      "basis": "measured warm GPU steps + extrapolated selection + atomic-save disk reserve",
+      "estimated_disk_bytes": 712244932,
+      "peak_gpu_bytes": 1076882432
+    },
+    {
+      "run_id": "rafdb/native_pretrained_30",
+      "updates": 10350,
+      "epochs": 30,
+      "estimated_gpu_hours": 0.8365056385903397,
+      "basis": "measured warm GPU steps + extrapolated selection + atomic-save disk reserve",
+      "estimated_disk_bytes": 712244932,
+      "peak_gpu_bytes": 1076882432
+    },
+    {
+      "run_id": "rafdb/native_random_60",
+      "updates": 20700,
+      "epochs": 60,
+      "estimated_gpu_hours": 1.6220079904555555,
+      "basis": "measured warm GPU steps + extrapolated selection + atomic-save disk reserve",
+      "estimated_disk_bytes": 712244932,
+      "peak_gpu_bytes": 1076882432
+    },
+    {
+      "run_id": "rafdb/native_ce",
+      "updates": 20700,
+      "epochs": 60,
+      "estimated_gpu_hours": 1.6199938080363305,
+      "basis": "measured warm GPU steps + extrapolated selection + atomic-save disk reserve",
+      "estimated_disk_bytes": 712244932,
+      "peak_gpu_bytes": 1076882432
+    },
+    {
+      "run_id": "rafdb/hybrid_ce",
+      "updates": 20700,
+      "epochs": 60,
+      "estimated_gpu_hours": 1.6913664931853416,
+      "basis": "measured warm GPU steps + extrapolated selection + atomic-save disk reserve",
+      "estimated_disk_bytes": 1027696096,
+      "peak_gpu_bytes": 1708574208
+    },
+    {
+      "run_id": "rafdb/hybrid_logits_kd",
+      "updates": 20700,
+      "epochs": 60,
+      "estimated_gpu_hours": 2.6363649647554364,
+      "basis": "measured warm GPU steps + extrapolated selection + atomic-save disk reserve",
+      "estimated_disk_bytes": 1027696096,
+      "peak_gpu_bytes": 3786885632
+    },
+    {
+      "run_id": "rafdb/hybrid_feature_kd",
+      "updates": 20700,
+      "epochs": 60,
+      "estimated_gpu_hours": 2.7300655708822887,
+      "basis": "measured warm GPU steps + extrapolated selection + atomic-save disk reserve",
+      "estimated_disk_bytes": 1027696096,
+      "peak_gpu_bytes": 3786885632
+    },
+    {
+      "run_id": "rafdb/full_v2",
+      "updates": 20700,
+      "epochs": 60,
+      "estimated_gpu_hours": 2.7064677042158616,
+      "basis": "measured warm GPU steps + extrapolated selection + atomic-save disk reserve",
+      "estimated_disk_bytes": 1614951008,
+      "peak_gpu_bytes": 3935458304
+    }
+  ],
+  "estimated_gpu_hours": 14.601954603184478,
+  "disk_estimate_partial_bytes": 7547019024,
+  "free_bytes": 50839572480,
+  "includes_teacher_preparation": false,
+  "extra_disk_reserve_bytes": 4294967296,
+  "ready_for_all_runs": true
+}

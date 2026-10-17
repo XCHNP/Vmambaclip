@@ -1,0 +1,21 @@
+{
+  "class_order": [
+    "Angry",
+    "Disgusted",
+    "Fearful",
+    "Happy",
+    "Neutral",
+    "Sad",
+    "Surprised"
+  ],
+  "prompts": {
+    "Angry": "A photo of a face. The eyebrows are lowered and pulled together deeply. The nostrils may be flared slightly. The lips are pressed firmly together forming a straight line. This is a Angry expression.",
+    "Disgusted": "A photo of a face. The eyebrows are slightly lowered. The nose is wrinkled significantly at the bridge. The upper lip is raised, exposing the upper teeth. This is a Disgusted expression.",
+    "Fearful": "A photo of a face. The eyebrows are raised and pulled together straight. The eyes are wide open with upper white sclera visible. The lips are parted and stretched horizontally. This is a Fearful expression.",
+    "Happy": "A photo of a face. The eyebrows are relaxed or slightly raised. The cheeks are raised high and prominent. The corners of the mouth are pulled upwards and backwards. This is a Happy expression.",
+    "Neutral": "A photo of a face. The eyebrows are in a resting, neutral position. The eyes are open normally with a calm gaze. The lips are touching lightly and relaxed. This is a Neutral expression.",
+    "Sad": "A photo of a face. The inner corners of the eyebrows are raised and drawn together. The upper eyelids are drooping slightly. The corners of the mouth are pulled firmly downwards. This is a Sad expression.",
+    "Surprised": "A photo of a face. The eyebrows are raised high and curved. The eyes are wide open with whites visible above and below iris. The jaw is dropped open, relaxing the mouth. This is a Surprised expression."
+  },
+  "source": "RAF-DB AU prompts generated from predata_rafdb.py AU_FEATURES (upper/middle/lower first entries); canonical order 0-6 = Angry, Disgusted, Fearful, Happy, Neutral, Sad, Surprised"
+}

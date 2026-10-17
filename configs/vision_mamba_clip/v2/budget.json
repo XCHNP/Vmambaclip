@@ -1,0 +1,154 @@
+{
+  "runs": [
+    {
+      "run_id": "rafdb/native_random_30",
+      "updates": 10350,
+      "epochs": 30,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    },
+    {
+      "run_id": "rafdb/native_pretrained_30",
+      "updates": 10350,
+      "epochs": 30,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    },
+    {
+      "run_id": "rafdb/native_random_60",
+      "updates": 20700,
+      "epochs": 60,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    },
+    {
+      "run_id": "rafdb/native_ce",
+      "updates": 20700,
+      "epochs": 60,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    },
+    {
+      "run_id": "rafdb/hybrid_ce",
+      "updates": 20700,
+      "epochs": 60,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    },
+    {
+      "run_id": "rafdb/hybrid_logits_kd",
+      "updates": 20700,
+      "epochs": 60,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    },
+    {
+      "run_id": "rafdb/hybrid_feature_kd",
+      "updates": 20700,
+      "epochs": 60,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    },
+    {
+      "run_id": "rafdb/full_v2",
+      "updates": 20700,
+      "epochs": 60,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    },
+    {
+      "run_id": "sfew/native_ce",
+      "updates": 1150,
+      "epochs": 50,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    },
+    {
+      "run_id": "sfew/hybrid_ce",
+      "updates": 1150,
+      "epochs": 50,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    },
+    {
+      "run_id": "sfew/hybrid_logits_kd",
+      "updates": 1150,
+      "epochs": 50,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    },
+    {
+      "run_id": "sfew/hybrid_feature_kd",
+      "updates": 1150,
+      "epochs": 50,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    },
+    {
+      "run_id": "sfew/full_v2",
+      "updates": 1150,
+      "epochs": 50,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    },
+    {
+      "run_id": "affectnet/native_ce",
+      "updates": 239520,
+      "epochs": 30,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    },
+    {
+      "run_id": "affectnet/hybrid_ce",
+      "updates": 239520,
+      "epochs": 30,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    },
+    {
+      "run_id": "affectnet/hybrid_logits_kd",
+      "updates": 239520,
+      "epochs": 30,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    },
+    {
+      "run_id": "affectnet/hybrid_feature_kd",
+      "updates": 239520,
+      "epochs": 30,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    },
+    {
+      "run_id": "affectnet/full_v2",
+      "updates": 239520,
+      "epochs": 30,
+      "estimated_gpu_hours": null,
+      "basis": "pending actual GPU measurement",
+      "estimated_disk_bytes": null
+    }
+  ],
+  "estimated_gpu_hours": null,
+  "disk_estimate_partial_bytes": 0,
+  "free_bytes": 52963491840,
+  "includes_teacher_preparation": false,
+  "extra_disk_reserve_bytes": 4294967296,
+  "ready_for_all_runs": false
+}

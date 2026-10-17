@@ -1,0 +1,56 @@
+[
+  {
+    "name": "feature_plus_logits",
+    "enabled": false,
+    "budget": "1 x RAF 60 epochs",
+    "status": "blocked_pending_explicit_protocol_and_assets"
+  },
+  {
+    "name": "backbone_only_feature",
+    "enabled": false,
+    "budget": "matched CE and feature pair, 2 x RAF 60",
+    "status": "blocked_pending_explicit_protocol_and_assets"
+  },
+  {
+    "name": "AU_W_multilayer",
+    "enabled": false,
+    "budget": "at most 3 x RAF 60",
+    "status": "blocked_pending_explicit_protocol_and_assets"
+  },
+  {
+    "name": "T0_feature",
+    "enabled": false,
+    "budget": "1 x RAF 60",
+    "status": "blocked_pending_explicit_protocol_and_assets"
+  },
+  {
+    "name": "student_transfer",
+    "enabled": false,
+    "budget": "4 x SFEW 30 + source costs",
+    "status": "blocked_pending_explicit_protocol_and_assets"
+  },
+  {
+    "name": "shared_affectnet_teacher",
+    "enabled": false,
+    "budget": "RAF 60 + SFEW 50",
+    "status": "blocked_pending_explicit_protocol_and_assets"
+  },
+  {
+    "name": "cross_domain_eval",
+    "enabled": false,
+    "budget": "18 evaluations",
+    "status": "blocked_pending_explicit_protocol_and_assets"
+  },
+  {
+    "name": "multiseed",
+    "enabled": false,
+    "budget": "selected runs x 2",
+    "status": "blocked_pending_explicit_protocol_and_assets"
+  },
+  {
+    "name": "input224",
+    "enabled": false,
+    "budget": "separate matched protocol required",
+    "status": "blocked_pending_explicit_protocol_and_assets"
+  }
+]

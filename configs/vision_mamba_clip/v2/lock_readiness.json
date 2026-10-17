@@ -1,0 +1,99 @@
+{
+  "plan_sha256": "8e09f001cad8cce36d429ce8219f4c14f1bd9481172a11cc6386e68497039c4f",
+  "code": {
+    "vim_v2/acceptance.py": "de0c23e5c45d08346c23ea30ed3c64f9f4c1c07cfa28163290b4c000c9ee8c97",
+    "vim_v2/checkpoint.py": "9ee61513c395d8ee4537e0efa9ec3de0f27bde667e8b8eb6d3499046ff57d7b0",
+    "vim_v2/common.py": "3b5af5e3ccf5c34ccd2f17f6e03a439de92fa605172e43c6ca6eb4a4f80ff6c3",
+    "vim_v2/config.py": "21f4593da1fc3785ee3e9f612f5dff04c64ae6ca52cfa010e50e91afbaa4f4d2",
+    "vim_v2/data.py": "4500a85768a73c6f47d16372d71710ab1a797533960941a2ae6983c1ed9d9636",
+    "vim_v2/losses.py": "f31bc0a0d2ff88d7ffae2f744ba53668af01a08c2c6d163ae8c708ded2acd8f7",
+    "vim_v2/models.py": "c3c31aa6c30dfd059d0b60ecc338c742612a94ff34db07166ff0f2ee97fd5012",
+    "vim_v2/optim.py": "0d4316da888970d5afe04b000c7b4c280747cb141d53e1595b36281f919777e8",
+    "vim_v2/runtime.py": "358702f6cad42c1fa12dd2ca1d0143a021745c18acaa7b894121d30c2d22f260",
+    "vim_v2/__init__.py": "8427899774cc4e195357a31424fbe0475f9d436386a95b1290717a8903bb1aff",
+    "vim_v2/__main__.py": "4050134cfb76e31c73b0e34cc48b122fc6ef48aa895bb0b3d377c20417fdb79c",
+    "src/open_clip/vision_mamba_clip/official_vim.py": "7aa2282cce37f28f8c7e201483fba02ea7c822396030af194af1dd6b2f8d15cd",
+    "src/open_clip/vision_mamba_clip/model.py": "f72eeb070d733ba209e32a86cbe33171d50b6936ed3c98336e1906aa897a7395",
+    "src/open_clip/vision_mamba_clip/adapters.py": "e98d4e42b1a679310c333717dee5b464fdbb9c644b3f2ce1e204a0b2d32358c7",
+    "src/open_clip/vision_mamba_clip/data.py": "eba58ec62931d85164abdce48ef42f24503fbc17451b98301dd1f92e1df88294",
+    "third_party/Vim/vim/models_mamba.py": "f32a57266f9c5e2824f51cded579f6a5eb722001d5f1cad3ea7e7179ab55f0f5",
+    "third_party/Vim/official_source.json": "449c29da9d51a59c10a64df8819dbb59e4c80d41a9faba91e8ed2f410d5d1e98"
+  },
+  "qualified_runs": [],
+  "blocked": [
+    {
+      "run_id": "rafdb/native_random_30",
+      "reason": "[Errno 2] No such file or directory: '/root/autodl-fs/fer_suite_v2_pretrained_20261016/acceptance/rafdb__native_random_30_init_gpu.json'"
+    },
+    {
+      "run_id": "rafdb/native_pretrained_30",
+      "reason": "[Errno 2] No such file or directory: '/root/autodl-fs/fer_suite_v2_pretrained_20261016/acceptance/rafdb__native_pretrained_30_init_gpu.json'"
+    },
+    {
+      "run_id": "rafdb/native_random_60",
+      "reason": "[Errno 2] No such file or directory: '/root/autodl-fs/fer_suite_v2_pretrained_20261016/acceptance/rafdb__native_random_60_init_gpu.json'"
+    },
+    {
+      "run_id": "rafdb/native_ce",
+      "reason": "[Errno 2] No such file or directory: '/root/autodl-fs/fer_suite_v2_pretrained_20261016/acceptance/rafdb__native_ce_init_gpu.json'"
+    },
+    {
+      "run_id": "rafdb/hybrid_ce",
+      "reason": "[Errno 2] No such file or directory: '/root/autodl-fs/fer_suite_v2_pretrained_20261016/acceptance/rafdb__hybrid_ce_init_gpu.json'"
+    },
+    {
+      "run_id": "rafdb/hybrid_logits_kd",
+      "reason": "[Errno 2] No such file or directory: '/root/autodl-fs/fer_suite_v2_pretrained_20261016/acceptance/rafdb__hybrid_logits_kd_init_gpu.json'"
+    },
+    {
+      "run_id": "rafdb/hybrid_feature_kd",
+      "reason": "[Errno 2] No such file or directory: '/root/autodl-fs/fer_suite_v2_pretrained_20261016/acceptance/rafdb__hybrid_feature_kd_init_gpu.json'"
+    },
+    {
+      "run_id": "rafdb/full_v2",
+      "reason": "[Errno 2] No such file or directory: '/root/autodl-fs/fer_suite_v2_pretrained_20261016/acceptance/rafdb__full_v2_init_gpu.json'"
+    },
+    {
+      "run_id": "sfew/native_ce",
+      "reason": "Acceptance not passed: /root/autodl-fs/fer_suite_v2_pretrained_20261016/acceptance/sfew_data.json"
+    },
+    {
+      "run_id": "sfew/hybrid_ce",
+      "reason": "Acceptance not passed: /root/autodl-fs/fer_suite_v2_pretrained_20261016/acceptance/sfew_data.json"
+    },
+    {
+      "run_id": "sfew/hybrid_logits_kd",
+      "reason": "Acceptance not passed: /root/autodl-fs/fer_suite_v2_pretrained_20261016/acceptance/sfew_data.json"
+    },
+    {
+      "run_id": "sfew/hybrid_feature_kd",
+      "reason": "Acceptance not passed: /root/autodl-fs/fer_suite_v2_pretrained_20261016/acceptance/sfew_data.json"
+    },
+    {
+      "run_id": "sfew/full_v2",
+      "reason": "Acceptance not passed: /root/autodl-fs/fer_suite_v2_pretrained_20261016/acceptance/sfew_data.json"
+    },
+    {
+      "run_id": "affectnet/native_ce",
+      "reason": "[Errno 2] No such file or directory: '/root/autodl-fs/fer_suite_v2_pretrained_20261016/acceptance/affectnet_data.json'"
+    },
+    {
+      "run_id": "affectnet/hybrid_ce",
+      "reason": "[Errno 2] No such file or directory: '/root/autodl-fs/fer_suite_v2_pretrained_20261016/acceptance/affectnet_data.json'"
+    },
+    {
+      "run_id": "affectnet/hybrid_logits_kd",
+      "reason": "Teacher training has not completed; existing best is provisional"
+    },
+    {
+      "run_id": "affectnet/hybrid_feature_kd",
+      "reason": "Teacher training has not completed; existing best is provisional"
+    },
+    {
+      "run_id": "affectnet/full_v2",
+      "reason": "Teacher training has not completed; existing best is provisional"
+    }
+  ],
+  "evidence": [],
+  "final_eval_used_for_selection": false
+}

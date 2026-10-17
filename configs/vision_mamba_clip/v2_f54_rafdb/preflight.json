@@ -1,0 +1,45 @@
+{
+  "runs": [
+    {
+      "run_id": "rafdb/native_random_30",
+      "state": "assets_verified",
+      "gpu_available": true
+    },
+    {
+      "run_id": "rafdb/native_pretrained_30",
+      "state": "assets_verified",
+      "gpu_available": true
+    },
+    {
+      "run_id": "rafdb/native_random_60",
+      "state": "assets_verified",
+      "gpu_available": true
+    },
+    {
+      "run_id": "rafdb/native_ce",
+      "state": "assets_verified",
+      "gpu_available": true
+    },
+    {
+      "run_id": "rafdb/hybrid_ce",
+      "state": "assets_verified",
+      "gpu_available": true
+    },
+    {
+      "run_id": "rafdb/hybrid_logits_kd",
+      "state": "assets_verified",
+      "gpu_available": true
+    },
+    {
+      "run_id": "rafdb/hybrid_feature_kd",
+      "state": "assets_verified",
+      "gpu_available": true
+    },
+    {
+      "run_id": "rafdb/full_v2",
+      "state": "assets_verified",
+      "gpu_available": true
+    }
+  ],
+  "formal_training_started": false
+}

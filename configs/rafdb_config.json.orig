@@ -1,0 +1,94 @@
+{
+  "protocol": {
+    "image_size": 256,
+    "num_classes": 7
+  },
+  "teacher": {
+    "architecture": "ViT-L-14",
+    "checkpoint": "checkpoints/ViT-L-14.pt"
+  },
+  "student": {
+    "family": "bidirectional_vim",
+    "factory": "open_clip.vision_mamba_clip.vim_backbone:create_vim",
+    "factory_kwargs": {
+      "model_name": "vim_small_patch16_224",
+      "img_size": 256
+    },
+    "checkpoint": null,
+    "num_special_tokens": 1,
+    "layer_indices": null,
+    "attention_heads": 8,
+    "use_coords": false,
+    "use_cnn": true,
+    "cnn": "resnet18_layer3",
+    "cnn_initialization": "random",
+    "fusion": "concat_projection",
+    "classifier_input": "three_states_plus_fused",
+    "attention_parameterization": "small_conv_softplus",
+    "train_text_projection": true
+  },
+  "data": {
+    "dataset": "rafdb",
+    "format": "label_file",
+    "root": "/root/autodl-tmp/open_clip-main/rafdb",
+    "label_file": "/root/autodl-tmp/open_clip-main/rafdb_labels.txt",
+    "au_prompt_schema": "configs/rafdb_au_prompts.json",
+    "text_mode": "au_description",
+    "validation_ratio": 0.1,
+    "validation_seed": 42,
+    "workers": 4
+  },
+  "stage1": {
+    "lambda_it": 1.0,
+    "lambda_align": 1.0,
+    "lambda_cnn": 1.0,
+    "lambda_tv": 1e-4,
+    "lambda_sparse": 1e-3,
+    "layer_weights": [0.3333, 0.3333, 0.3334],
+    "tau_it": 2.0
+  },
+  "stage2": {
+    "lambda_task": 1.0,
+    "lambda_distill": 0.2,
+    "beta_logit": 1.0,
+    "lambda_anchor": 0.05,
+    "lambda_au": 0.1,
+    "gamma_sparse": 1e-3,
+    "tau_logit": 2.0,
+    "tau_low": 0.1,
+    "detach_spatial_target": true
+  },
+  "optimizer": {
+    "lr": 1e-4,
+    "betas": [0.9, 0.98],
+    "eps": 1e-6,
+    "weight_decay": 0.01,
+    "batch_size": 32,
+    "amp_dtype": "bfloat16",
+    "gradient_checkpointing": true,
+    "gradient_accumulation_steps": 1,
+    "paper_warmup_steps": 10000,
+    "strict_warmup": false,
+    "engineering_warmup_ratio": 0.05
+  },
+  "stage_epochs": {
+    "teacher_t1": 5,
+    "teacher_t2": 10,
+    "student_s1": 10,
+    "student_s2": 20
+  },
+  "stage_controls": {
+    "teacher_t1": {},
+    "teacher_t2": {},
+    "student_s1": {},
+    "student_s2": {}
+  },
+  "checkpoints": {
+    "teacher_t1": "checkpoints/teacher_t1.pt",
+    "teacher_t2": "checkpoints/teacher_t2.pt",
+    "student_s1": "checkpoints/student_s1.pt",
+    "student_s2": "checkpoints/student_s2.pt"
+  },
+  "epsilon": 1e-6,
+  "profile": "full_paper_target"
+}
