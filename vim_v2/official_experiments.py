@@ -26,7 +26,10 @@ def validate_student_spec(s):
     expected={'backbone_family','variant','use_sasf','sasf_stage','cnn_multiscale','query_mode','patch_dropout','fusion',
               'architecture','common_dim','input_size','initialization','drop_path_rate','gradient_checkpointing',
               'official_model_name','source_revision','pretrained','cnn_pretrained','patch_dropout_scope'}
-    if set(s)!=expected: raise ValueError('Unknown/missing experimental student fields')
+    if set(s)-{'cnn_auxiliary','cnn_residual'}!=expected: raise ValueError('Unknown/missing experimental student fields')
+    for key in ['cnn_auxiliary','cnn_residual']:
+        if type(s.get(key,False)) is not bool: raise ValueError('CNN module switches must be boolean')
+    if (s.get('cnn_auxiliary') or s.get('cnn_residual')) and s['variant']!='hybrid': raise ValueError('CNN refinement requires Hybrid')
     if s['architecture']!='experimental_student' or s['common_dim']!=768 or s['input_size']!=256 or s['initialization']!='pretrained': raise ValueError('Unsupported student dimensions/initialization')
     if s['backbone_family'] not in ['cnn','vim','vmamba'] or s['variant'] not in ['hybrid','cnn_only','mamba_only']: raise ValueError('Unknown experiment backbone/variant')
     if (s['backbone_family']=='cnn')!=(s['variant']=='cnn_only'): raise ValueError('CNN-only must not instantiate an SSM')
@@ -106,7 +109,8 @@ def build_student(c,initialize=True):
         else:
             model=HybridVisionMambaStudent(adapter,dims,768,7,cnn_backbone=cnn,use_cnn=s['variant']!='mamba_only',
                 use_sasf=s['use_sasf'],sasf_stage=s['sasf_stage'],cnn_multiscale=s['cnn_multiscale'],
-                query_mode=s['query_mode'],patch_dropout=s['patch_dropout'],fusion=s['fusion'])
+                query_mode=s['query_mode'],patch_dropout=s['patch_dropout'],fusion=s['fusion'],
+                cnn_auxiliary=s.get('cnn_auxiliary',False),cnn_residual=s.get('cnn_residual',False))
         stable_head_initialization(model,c['head_seed'])
     frozen=set()
     for name,p in model.named_parameters():

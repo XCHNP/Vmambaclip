@@ -37,7 +37,7 @@ def suite(tmp_path):
 
 def test_whole_catalog_has_explicit_budgets_and_deduplicated_aliases(suite,tmp_path):
     path,plan,configs=suite
-    assert len(plan['runs'])==3*len(catalog())==72
+    assert len(plan['runs'])==3*len(catalog())==90
     for config in configs.values():
         validate(config)
         assert sum(stage['epochs'] for stage in config['stages'])=={'rafdb':60,'sfew':50,'affectnet':30}[config['dataset']]
@@ -206,7 +206,7 @@ def test_aggregate_supports_selected_experiments_without_hardcoded_18_run_matrix
     _,plan,_=suite
     path=Path(plan['runs'][0]['config']).parent/'plan.json'
     result=aggregate(path)
-    assert len(result['results'])==72 and result['comparisons']
+    assert len(result['results'])==90 and result['comparisons']
     assert (Path(plan['output_root'])/'reports/per_class.csv').exists()
 
 

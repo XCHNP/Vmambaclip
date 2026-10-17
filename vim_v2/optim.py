@@ -5,10 +5,32 @@ def configure_stage(model,stage):
     model.train()
     for name,p in model.named_parameters():
         permanent=name in getattr(model,'permanently_frozen_names',set()) or name.startswith('text_to_classifier.') or (name.startswith('vim.') and '.norm_f.' in name)
-        p.requires_grad_(not permanent and not (stage=='s1' and name.startswith('classifier.')))
+        classification_only=name.startswith('classifier.') or name.startswith('cnn_residual_aux.cnn_aux_head.')
+        p.requires_grad_(not permanent and not (stage=='s1' and classification_only))
         if not p.requires_grad: p.grad=None
     if hasattr(model,'compute_logits'): model.compute_logits=stage!='s1'
+    if hasattr(model,'compute_aux_logits'):
+        block=getattr(model,'cnn_residual_aux',None)
+        model.compute_aux_logits=stage!='s1' and block is not None and block.cnn_aux_head is not None
     if stage=='s1': model.classifier.eval()
+
+
+def branch_gradient_stats(model):
+    """Unclipped gradient scale together with trainability and missing-gradient counts."""
+    families={'cnn':('cnn_backbone.','cnn_projection.','cnn_lateral.','cnn_residual_aux.'),
+              'vmamba':('vim.','backbone.'),'sasf':('sasf.',),'cnn_aux_head':('cnn_residual_aux.cnn_aux_head.',)}
+    result={}
+    named=list(model.named_parameters())
+    for family,prefixes in families.items():
+        parameters=[p for name,p in named if name.startswith(prefixes)]
+        trainable=[p for p in parameters if p.requires_grad]
+        gradients=[p.grad.detach().float().norm() for p in trainable if p.grad is not None]
+        norm=float(torch.stack(gradients).norm()) if gradients else 0.
+        result[family+'_grad_norm']=norm
+        result[family]={'parameters':sum(p.numel() for p in parameters),
+                        'trainable_parameters':sum(p.numel() for p in trainable),
+                        'trainable_tensors':len(trainable),'gradient_none_tensors':sum(p.grad is None for p in trainable)}
+    return result
 
 def groups(model,cfg):
     declared=set()

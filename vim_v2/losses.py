@@ -1,9 +1,13 @@
 import torch
 import torch.nn.functional as F
 
-def objectives(logits, feature, labels, weights, target=None, prototypes=None):
+def objectives(logits, feature, labels, weights, target=None, prototypes=None, cnn_aux_logits=None):
     """FP32 only; zero-weight branches never dereference their input/teacher."""
     raw={}; weighted={}
+    if weights.get('cnn_aux',0):
+        if cnn_aux_logits is None or cnn_aux_logits.shape!=logits.shape:
+            raise ValueError('CNN auxiliary CE requires independent [B,C] logits')
+        raw['cnn_aux']=F.cross_entropy(cnn_aux_logits.float(),labels)
     if weights['ce']:
         class_weights=weights.get('class_weights')
         class_weights=torch.as_tensor(class_weights,device=logits.device,dtype=torch.float32) if class_weights is not None else None

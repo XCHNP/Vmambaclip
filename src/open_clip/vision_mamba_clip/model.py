@@ -49,6 +49,7 @@ class SASF(nn.Module):
             raise ValueError("SASF patch count must match height * width; exclude CLS and token dropout")
         x = tokens.transpose(1, 2).reshape(tokens.shape[0], self.in_dim, height, width)
         enhanced = x + self.fusion(torch.cat([x] + [branch(x) for branch in self.branches], dim=1))
+        self.last_spatial_delta_rms = (enhanced - x).detach().float().square().mean().sqrt()
         return enhanced.flatten(2).transpose(1, 2), self.proj(enhanced.mean(dim=(2, 3)))
 
 
@@ -64,6 +65,29 @@ class StudentOutput:
     attention: Tensor
     logits: Optional[Tensor]
     diagnostics: Optional[Dict[str, Tensor]] = None
+    cnn_aux_logits: Optional[Tensor] = None
+
+
+class CNNResidualAux(nn.Module):
+    """Independent CNN descriptor; residual and training head are separate factors."""
+
+    def __init__(self, dim, num_classes, *, residual=False, auxiliary=False):
+        super().__init__()
+        self.cnn_norm = nn.LayerNorm(dim)
+        self.fusion_norm = nn.LayerNorm(dim) if residual else None
+        self.cnn_gate_logit = nn.Parameter(torch.tensor(-1.38629436112)) if residual else None
+        self.cnn_aux_head = nn.Linear(dim, num_classes) if auxiliary else None
+
+    def forward(self, old_fused, cnn_tokens, *, compute_aux=False, disable_cnn=False):
+        cnn_global = self.cnn_norm(cnn_tokens.mean(dim=1))
+        if disable_cnn:
+            cnn_global = torch.zeros_like(cnn_global)
+        gate = self.cnn_gate_logit.sigmoid() if self.cnn_gate_logit is not None else old_fused.new_zeros(())
+        fused = old_fused
+        if self.fusion_norm is not None:
+            fused = self.fusion_norm(old_fused + gate * cnn_global)
+        aux = self.cnn_aux_head(cnn_global) if compute_aux and self.cnn_aux_head is not None else None
+        return fused, aux, gate, cnn_global
 
 
 class ResNet18ThroughLayer3(nn.Module):
@@ -156,6 +180,8 @@ class HybridVisionMambaStudent(nn.Module):
         cnn_multiscale: bool = False,
         query_mode: str = "single",
         patch_dropout: float = 0.,
+        cnn_auxiliary: bool = False,
+        cnn_residual: bool = False,
     ) -> None:
         super().__init__()
         if tuple(state_dims.keys()) != self.aliases:
@@ -171,6 +197,9 @@ class HybridVisionMambaStudent(nn.Module):
         self.use_cnn = bool(use_cnn)
         self.compute_logits = bool(compute_logits)
         self.use_sasf = bool(use_sasf)
+        if (cnn_auxiliary or cnn_residual) and not self.use_cnn:
+            raise ValueError("CNN auxiliary/residual paths require the CNN branch")
+        self.compute_aux_logits = bool(cnn_auxiliary)
         if sasf_stage not in self.aliases or query_mode not in {"single", "multi"}:
             raise ValueError("Invalid SASF stage or query mode")
         if not 0 <= patch_dropout < 1:
@@ -238,6 +267,8 @@ class HybridVisionMambaStudent(nn.Module):
             self.local_cross_attention = None
             self.local_fusion_norm = None
         self.cnn_lateral = nn.Conv2d(128, self.cnn_channels, 1) if cnn_multiscale else None
+        self.cnn_residual_aux = CNNResidualAux(common_dim, num_classes, residual=cnn_residual,
+                                             auxiliary=cnn_auxiliary) if cnn_auxiliary or cnn_residual else None
 
     def _project_states(self, hidden: Mapping[str, Tensor]):
         raw: Dict[str, Tensor] = {}
@@ -257,7 +288,7 @@ class HybridVisionMambaStudent(nn.Module):
             zeros = images.new_zeros((batch, self.common_dim))
             patch_norm = images.new_zeros((batch, 1, self.common_dim))
             attention = images.new_ones((batch, 1, 1, 1))
-            return zeros, zeros, patch_norm, attention, patch_norm
+            return zeros, zeros, patch_norm, attention, patch_norm, patch_norm
 
         cnn_raw = self.cnn_backbone(images)
         if self.cnn_multiscale:
@@ -283,9 +314,9 @@ class HybridVisionMambaStudent(nn.Module):
         if self.local_cross_attention is not None:
             relative_attention = attention / attention.mean(dim=(2, 3), keepdim=True).clamp_min(self.epsilon)
             local_tokens = (projected * relative_attention).flatten(2).transpose(1, 2)
-        return descriptor, distill, patch_norm, attention, local_tokens
+        return descriptor, distill, patch_norm, attention, local_tokens, patch_raw
 
-    def forward(self, images: Tensor, intervention: str = "full") -> StudentOutput:
+    def forward(self, images: Tensor, intervention: str = "full", *, return_aux: bool = False) -> StudentOutput:
         if intervention not in {"full", "no_cnn", "no_mamba", "no_sasf", "shuffle_cnn", "shuffle_cnn_values"}:
             raise ValueError(f"Unknown intervention: {intervention}")
         hidden = self.vim(images)
@@ -296,6 +327,7 @@ class HybridVisionMambaStudent(nn.Module):
         context = torch.stack([states_raw[name] for name in self.aliases], dim=1)
         query = self.global_query.expand(images.shape[0], -1, -1)
         mamba_global = self.cross_attention(query, context, context, need_weights=False)[0][:, 0]
+        original_mamba_global = mamba_global
         sasf_delta = torch.zeros_like(mamba_global)
         if self.use_sasf and intervention not in {"no_sasf", "no_mamba"}:
             source = hidden[self.sasf_stage]
@@ -309,7 +341,7 @@ class HybridVisionMambaStudent(nn.Module):
         if intervention == "no_mamba":
             mamba_global = torch.zeros_like(mamba_global)
 
-        cnn_descriptor, cnn_distill, patch_norm, attention, local_tokens = self._local_features(images)
+        cnn_descriptor, cnn_distill, patch_norm, attention, local_tokens, independent_cnn_tokens = self._local_features(images)
         if intervention == "no_cnn":
             cnn_descriptor = torch.zeros_like(cnn_descriptor)
             cnn_distill = torch.zeros_like(cnn_distill)
@@ -339,6 +371,15 @@ class HybridVisionMambaStudent(nn.Module):
             mamba_global = self.local_fusion_norm(mamba_global + attended)
         fusion_input = torch.cat((mamba_global, cnn_descriptor), dim=-1)
         fused_raw = self.fusion_projection(fusion_input)
+        aux_logits = None
+        cnn_gate = images.new_zeros(())
+        independent_cnn_global = images.new_zeros((images.shape[0], self.common_dim))
+        if self.cnn_residual_aux is not None:
+            fused_raw, aux_logits, cnn_gate, independent_cnn_global = self.cnn_residual_aux(
+                fused_raw, independent_cnn_tokens,
+                compute_aux=self.compute_aux_logits and (self.training or return_aux),
+                disable_cnn=intervention == "no_cnn",
+            )
         fused_norm = F.normalize(fused_raw.float(), dim=-1).to(fused_raw.dtype)
 
         logits = None
@@ -351,9 +392,16 @@ class HybridVisionMambaStudent(nn.Module):
             "mamba_rms": mamba_before_fusion.detach().float().square().mean().sqrt(),
             "cnn_rms": cnn_descriptor.detach().float().square().mean().sqrt(),
             "sasf_delta_rms": sasf_delta.detach().float().square().mean().sqrt(),
+            "sasf_spatial_delta_rms": self.sasf.last_spatial_delta_rms if self.use_sasf and intervention not in {"no_sasf", "no_mamba"} else images.new_zeros(()),
             "cross_attention_rms": attended.detach().float().square().mean().sqrt(),
             "cnn_kv_tokens": images.new_tensor(local_tokens.shape[1]),
             "sasf_gate": self.sasf_alpha.detach().tanh() if self.sasf_alpha is not None else images.new_zeros(()),
+            "sasf_residual_ratio": (sasf_delta.detach().float().norm(dim=-1) /
+                                    original_mamba_global.detach().float().norm(dim=-1).clamp_min(self.epsilon)).mean(),
+            "cnn_gate": cnn_gate.detach(),
+            "cnn_independent_rms": independent_cnn_global.detach().float().square().mean().sqrt(),
+            "cross_attn_norm": attended.detach().float().norm(dim=-1).mean(),
+            "fused_feat_norm": fused_raw.detach().float().norm(dim=-1).mean(),
         }
         return StudentOutput(
             fused_raw=fused_raw,
@@ -366,6 +414,7 @@ class HybridVisionMambaStudent(nn.Module):
             attention=attention,
             logits=logits,
             diagnostics=self.last_diagnostics,
+            cnn_aux_logits=aux_logits,
         )
 
 

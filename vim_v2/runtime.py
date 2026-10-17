@@ -48,9 +48,11 @@ def split_stage(c,epoch):
 
 def forward_loss(model,teacher,batch,weights,device):
     image=batch['image_student'].to(device,non_blocking=True); labels=batch['label'].to(device,non_blocking=True)
-    output=model(image)
+    output=model(image,return_aux=True) if not model.training and getattr(model,'compute_aux_logits',False) else model(image)
     logits=output if isinstance(output,torch.Tensor) else output.logits
     feature=None if isinstance(output,torch.Tensor) else output.fused_raw
+    auxiliary=None if isinstance(output,torch.Tensor) else getattr(output,'cnn_aux_logits',None)
+    model._last_aux_logits=auxiliary.detach() if auxiliary is not None else None
     target=None
     if weights['feature'] or weights['logits'] or weights.get('affinity',0):
         if teacher is None: raise ValueError('Active distillation requires verified teacher')
@@ -61,7 +63,7 @@ def forward_loss(model,teacher,batch,weights,device):
             if weights['logits']: target['logits']=teacher.classifier(feature_t)
     # Autocast explicitly disabled for numerically sensitive FP32 loss arithmetic.
     prototypes=getattr(model,'_text_prototypes',None) if weights.get('text',0) else None
-    with torch.autocast(device.type,enabled=False): loss,raw,weighted=objectives(logits,feature,labels,weights,target,prototypes)
+    with torch.autocast(device.type,enabled=False): loss,raw,weighted=objectives(logits,feature,labels,weights,target,prototypes,auxiliary)
     return loss,logits,raw,weighted
 
 def metrics(matrix):
@@ -75,6 +77,7 @@ def metrics(matrix):
 @torch.no_grad()
 def evaluate_model(model,batches,device,amp=False,teacher=None,s1_loss=None,predictions=None,max_batches=None):
     modes={m:m.training for m in model.modules()}; model.eval(); matrix=torch.zeros(7,7,dtype=torch.long); loss_sum=0.; seen=0
+    aux_matrix=matrix.clone()
     f=Path(predictions).open('w',newline='') if predictions else None
     writer=csv.writer(f) if f else None
     if writer: writer.writerow(['sample_id','true_label','predicted_label']+[f'p{i}' for i in range(7)])
@@ -86,6 +89,9 @@ def evaluate_model(model,batches,device,amp=False,teacher=None,s1_loss=None,pred
             with torch.autocast(device.type,dtype=torch.bfloat16,enabled=amp):
                 loss,logits,_,_=forward_loss(model,teacher,b,weights,device)
             n=len(b['label']); seen+=n; loss_sum+=float(loss)*n
+            aux=getattr(model,'_last_aux_logits',None)
+            if aux is not None:
+                aux_matrix+=torch.bincount(b['label']*7+aux.argmax(-1).cpu(),minlength=49).reshape(7,7)
             if logits is not None and s1_loss is None:
                 probs=logits.float().softmax(-1).cpu(); predicted=probs.argmax(-1)
                 matrix+=torch.bincount(b['label']*7+predicted,minlength=49).reshape(7,7)
@@ -95,6 +101,8 @@ def evaluate_model(model,batches,device,amp=False,teacher=None,s1_loss=None,pred
         if s1_loss is None:
             if max_batches is None: result.update(metrics(matrix))
             else: result['accuracy']=float(matrix.diag().sum()/matrix.sum())
+        if aux_matrix.sum():
+            result['cnn_aux_metrics']=metrics(aux_matrix) if (aux_matrix.sum(1)>0).all() else {'accuracy':float(aux_matrix.diag().sum()/aux_matrix.sum()),'confusion_matrix':aux_matrix.tolist()}
         return result
     finally:
         if f: f.close()
@@ -169,6 +177,9 @@ def _run(c,root,resume,smoke,max_updates):
             if c.get('sampling')=='weighted_ce':
                 from .data import class_weights
                 loss_weights['class_weights']=class_weights(manifest(c['data'])['samples']['train']).tolist()
+            if c.get('sampling')=='class_balanced_ce':
+                from .data import effective_number_weights
+                loss_weights['class_weights']=effective_number_weights(manifest(c['data'])['samples']['train'],beta=.999).tolist()
             if not smoke and len(c['stages'])==2 and stage['name']=='s2' and stage_parent is None:
                 stage_parent=record_stage_transition(out,model,optimizer,scheduler,c['stages'][0]['epochs'])
             stage_config=out/'stages'/stage['name']/'effective_config.json'
@@ -181,7 +192,7 @@ def _run(c,root,resume,smoke,max_updates):
                 del teacher; teacher=None; torch.cuda.empty_cache()
                 if stage['teacher']: teacher=make_teacher(c,stage['teacher'],device)
                 teacher_stage=stage['teacher']
-            train_matrix=torch.zeros(7,7,dtype=torch.long); sums={}; nseen=0; updates=0; step_times=[]; probes_report=[]; stage_updated={}
+            train_matrix=torch.zeros(7,7,dtype=torch.long); train_aux_matrix=train_matrix.clone(); sums={}; nseen=0; updates=0; step_times=[]; probes_report=[]; stage_updated={}
             for batch_idx,b in enumerate(loader(c,'train',epoch)):
                 scheduler.prepare(); optimizer.zero_grad(set_to_none=True)
                 deep_probe=smoke or batch_idx==0 or batch_idx==c['schedule']['steps_per_epoch']-1
@@ -196,6 +207,10 @@ def _run(c,root,resume,smoke,max_updates):
                     from .losses import gradient_report
                     objective_gradients=gradient_report(weighted,model.fusion_projection.weight)
                 scaler.scale(loss).backward(); scaler.unscale_(optimizer)
+                gradient_stats=None
+                if deep_probe:
+                    from .optim import branch_gradient_stats
+                    gradient_stats=branch_gradient_stats(model)
                 norm=torch.nn.utils.clip_grad_norm_(model.parameters(),c['optimizer']['grad_clip'])
                 if not torch.isfinite(norm): raise FloatingPointError('Nonfinite gradient')
                 if teacher and any(p.grad is not None for p in teacher.parameters()): raise RuntimeError('Teacher has gradients')
@@ -208,6 +223,7 @@ def _run(c,root,resume,smoke,max_updates):
                         'grad_norm':float(norm),'probe_names':{k:name for k,(name,p) in selected.items()},'probe_gradient_norms':grad,
                         'probe_update_norms':delta,'lr':[g['lr'] for g in optimizer.param_groups],'seconds':sec}
                 if objective_gradients is not None: record['objective_gradients']=objective_gradients
+                if gradient_stats is not None: record['branch_gradients_before_clip']=gradient_stats
                 if deep_probe and hasattr(model,'last_diagnostics'):
                     record['branch_diagnostics']={name:float(value) for name,value in model.last_diagnostics.items()}
                 with (out/'updates.jsonl').open('a') as f: f.write(json.dumps(record)+'\n')
@@ -221,6 +237,9 @@ def _run(c,root,resume,smoke,max_updates):
                 for k,v in raw.items(): sums[k]=sums.get(k,0.)+float(v)*n
                 if logits is not None:
                     train_matrix+=torch.bincount(b['label']*7+logits.detach().argmax(-1).cpu(),minlength=49).reshape(7,7)
+                aux=getattr(model,'_last_aux_logits',None)
+                if aux is not None:
+                    train_aux_matrix+=torch.bincount(b['label']*7+aux.argmax(-1).cpu(),minlength=49).reshape(7,7)
                 if smoke and updates>=max_updates: break
             if smoke and not all(stage_updated.values()):
                 raise RuntimeError('Target module had no actual gradient/update in the stage: '+str([k for k,v in stage_updated.items() if not v]))
@@ -247,6 +266,7 @@ def _run(c,root,resume,smoke,max_updates):
                  'train_confusion_matrix':train_matrix.tolist(),'selection':validation,'elapsed_seconds':elapsed_now,
                  'peak_gpu_bytes':torch.cuda.max_memory_allocated(),'last_lr':[g['lr'] for g in optimizer.param_groups]}
             if train_matrix.sum(): row['train_metrics']=metrics(train_matrix)
+            if train_aux_matrix.sum(): row['cnn_aux_train_metrics']=metrics(train_aux_matrix)
             best_payload={'kind':'inference','identity':identity,'model':model.state_dict(),'epoch':epoch+1,'global_update':scheduler.updates,'selection':validation,'stage_parent_sha256':stage_parent}
             if stage['name']=='s1':
                 if best_s1 is None or validation['loss']<best_s1: best_s1=validation['loss']; atomic_save(out/'s1_best.pt',best_payload)

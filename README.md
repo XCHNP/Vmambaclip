@@ -2,6 +2,8 @@
 
 ## 当前 FER 学生开发入口（2026-10-17）
 
+RAF-DB 诊断后的优先实验为 **E3 + CNN 独立辅助监督／门控残差**（R0–R6），默认不在 R1–R3 中启用 SASF、多尺度或多 Query。三 seed、Class-Balanced CE 和配对 Bootstrap 的命令见 [CNN 融合修订说明](docs/CNN_REFINEMENT_2026-10-17.md)；全部实验仍共用 `prepare-experiments` 和现有训练入口。
+
 本轮已增加统一实验目录：`python -m vim_v2 prepare-experiments`。一套代码支持骨干/SASF、单分支、多尺度 CNN、多 Query、KD、文本原型和采样对照；详细配置、24 项实验及验收命令见 [统一实验说明](docs/UNIFIED_EXPERIMENTS_2026-10-17.md)。旧 `prepare-vmamba` 仍保留兼容。
 
 当前目标为 **官方 VMamba-T s1l8（SS2D）+ CNN + SASF**，使用 VMamba Query 与 CNN 空间 Key/Value 的跨分支注意力。源码、权重核验、配置和测试说明见 [接入与审查记录](docs/VMAMBA_SASF_REVIEW_2026-10-17.md)。旧 Vim 配置保留为历史实验记录。

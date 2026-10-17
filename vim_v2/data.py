@@ -59,6 +59,18 @@ def class_weights(rows):
     return weights/weights.mean()
 
 
+def effective_number_weights(rows,beta=.999):
+    """Training-count class-balanced weights, stable for small effective counts."""
+    import math
+    if not 0<=beta<1: raise ValueError('Class-balanced beta must be in [0,1)')
+    counts=torch.bincount(torch.tensor([row['label'] for row in rows]),minlength=7).double()
+    if (counts==0).any(): raise ValueError('Class-balanced CE requires all seven training classes')
+    if beta==0: return torch.ones(7)
+    effective=-torch.expm1(counts*math.log(beta))
+    weights=(1-beta)/effective
+    return (weights/weights.mean()).float()
+
+
 def loader(cfg,split,epoch=0,augment=True,indices=None):
     m=manifest(cfg['data']); ds=PairedDataset(m,split,cfg['seed'],epoch,augment,indices)
     sampler=None

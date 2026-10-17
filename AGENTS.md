@@ -10,6 +10,9 @@
 
 ## 学生骨干替换（用户于 2026-10-17 确认）
 
+- 最新 RAF-DB 分析后的优先方向为 E3 + CNN 辅助头／门控残差（R0–R6），详见 `docs/CNN_REFINEMENT_2026-10-17.md`。R1–R3 不启用 SASF、多尺度、多 Query 或文本；R4/5/6 独立从显式 refinement_base 派生。
+- 支持训练 seeds 42/43/44，保持原 frozen manifest，独立输出与初始化身份；Class-Balanced CE 使用训练计数，不叠加平衡采样。本轮授权本地修改、测试及推送 dev，不自动执行云端实验。
+
 - 用户后续要求按最终分析用一份代码覆盖所有实验：当前统一入口为 `python -m vim_v2 prepare-experiments`（schema 3），说明见 `docs/UNIFIED_EXPERIMENTS_2026-10-17.md`。Vim 仅作为 E1/E2 明确对照，主体仍为 VMamba-T s1l8。
 - 多尺度 CNN、SASF e/m/l、多 Query、文本原型监督、KD/affinity 和类别采样均由实验配置控制；不能把不同配方的结果混作单因素结论。此轮没有额外授权云端训练或恢复暂停任务。
 

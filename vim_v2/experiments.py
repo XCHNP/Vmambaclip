@@ -7,14 +7,14 @@ from pathlib import Path
 from .common import CLASSES, MODEL, atomic_json, check_asset, code_identity, environment, fingerprint, read
 from .config import PREPROCESS
 
-ALIASES={'D_ce':'F_recommended','B_hybrid':'E3','T2':'T2_w0p1','T3':'T3_w0p1'}
+ALIASES={'D_ce':'F_recommended','B_hybrid':'E3','T2':'T2_w0p1','T3':'T3_w0p1','R0':'E3'}
 
 def recipe(ce=1., feature=0., logits=0., text=0., affinity=0.):
     return {'ce':ce,'feature':feature,'feature_cosine':1.,'feature_mse':1.,'feature_mse_space':'raw',
             'logits':logits,'text':text,'text_scale':10.,'affinity':affinity,'temperature':2.}
 
 
-def catalog():
+def catalog(refinement_base='R3'):
     """Each row declares its comparator; variants never silently form a Cartesian grid."""
     base={'backbone_family':'vmamba','variant':'hybrid','use_sasf':True,'sasf_stage':'l',
           'cnn_multiscale':False,'query_mode':'single','patch_dropout':0.,'fusion':'mamba_cnn_cross_attention'}
@@ -45,18 +45,35 @@ def catalog():
     add('A_patchdrop','D_ce',student=dict(architecture,patch_dropout=.3),group='augmentation')
     add('A_balanced_sampler','D_ce',student=architecture,sampling='balanced',group='imbalance')
     add('A_weighted_ce','D_ce',student=architecture,sampling='weighted_ce',group='imbalance')
+    refinement={'use_sasf':False,'cnn_auxiliary':False,'cnn_residual':False}
+    add('R1','R0',student=dict(refinement,cnn_auxiliary=True),loss=dict(recipe(),cnn_aux=.2),group='refinement')
+    add('R2','R0',student=dict(refinement,cnn_residual=True),group='refinement')
+    add('R3','R1',student=dict(refinement,cnn_auxiliary=True,cnn_residual=True),loss=dict(recipe(),cnn_aux=.2),group='refinement')
+    if refinement_base not in ['R0','R1','R2','R3']: raise ValueError('refinement_base must be R0/R1/R2/R3')
+    parent=rows['E3'] if refinement_base=='R0' else rows[refinement_base]
+    selected=copy.deepcopy(parent['student'])
+    loss=copy.deepcopy(parent['loss'])
+    add('R4',refinement_base,student=selected,loss=loss,sampling='class_balanced_ce',group='refinement_followup')
+    add('R5',refinement_base,student=selected,loss=dict(loss,text=.05),text_mode='simple',group='refinement_followup')
+    add('R6',refinement_base,student=dict(selected,use_sasf=True,sasf_stage='m'),loss=loss,group='refinement_followup')
     return rows
 
 
-def model_identity(student):
-    return 'experiment_'+fingerprint(student)[:20]
+def model_identity(student,seed=42,head_seed=1042):
+    suffix='' if (seed,head_seed)==(42,1042) else f'_seed{seed}_head{head_seed}'
+    return 'experiment_'+fingerprint(student)[:20]+suffix
 
 
-def prepare_experiments(paths_path,out,*,datasets=('rafdb',),experiments=None):
+def experiment_run_name(name,seed):
+    return name if seed==42 else f'{name}_seed{seed}'
+
+
+def prepare_experiments(paths_path,out,*,datasets=('rafdb',),experiments=None,refinement_base='R3',seeds=(42,)):
     from .official_experiments import student_spec
     paths=read(paths_path); out=Path(out).resolve()
     if out.exists() and any(out.iterdir()): raise FileExistsError('Use an empty new plan directory')
-    rows=catalog(); requested=list(rows) if experiments is None else list(experiments)
+    rows=catalog(refinement_base); requested=list(rows) if experiments is None else list(experiments)
+    if not seeds or len(seeds)!=len(set(seeds)) or any(type(seed) is not int or seed<0 or seed>2**32-1001 for seed in seeds): raise ValueError('Seeds must be unique nonnegative 32-bit integers')
     if not requested or len(requested)!=len(set(requested)) or set(requested)-(set(rows)|set(ALIASES)): raise ValueError('Unknown/duplicate experiment selection')
     chosen=list(dict.fromkeys(ALIASES.get(name,name) for name in requested))
     if not datasets or len(datasets)!=len(set(datasets)) or set(datasets)-{'rafdb','sfew','affectnet'}: raise ValueError('Unknown/duplicate datasets')
@@ -68,9 +85,10 @@ def prepare_experiments(paths_path,out,*,datasets=('rafdb',),experiments=None):
         info=paths['datasets'][domain]; steps=info['counts']['train']//32
         if steps<1: raise ValueError('Training split must contain at least one complete batch32')
         epochs={'rafdb':60,'sfew':50,'affectnet':30}[domain]
-        for name in chosen:
+        for name,seed in [(name,seed) for name in chosen for seed in seeds]:
             row=rows[name]; student=student_spec(row['student'],paths)
-            init_id=model_identity(student); run_id=domain+'/'+name
+            head_seed=1000+seed; init_id=model_identity(student,seed,head_seed)
+            run_name=experiment_run_name(name,seed); run_id=domain+'/'+run_name
             stages=[{'name':'s2','epochs':epochs,'teacher':'t2' if row['loss']['feature'] or row['loss']['logits'] or row['loss']['affinity'] else None,'loss':copy.deepcopy(row['loss'])}]
             if row['two_stage']:
                 s1=10 if domain=='rafdb' else 5
@@ -80,7 +98,7 @@ def prepare_experiments(paths_path,out,*,datasets=('rafdb',),experiments=None):
             registry=dependencies|({'t1'} if 't2' in dependencies else set())
             teachers={key:copy.deepcopy(info.get('teachers',{}).get(key)) for key in sorted(registry)}
             text={'mode':row['text_mode'],'prototypes':copy.deepcopy(paths.get('text_prototypes',{}).get(row['text_mode']))}
-            c={'schema_version':3,'run_id':run_id,'seed':42,'head_seed':1042,'dataset':domain,'class_order':CLASSES,
+            c={'schema_version':3,'run_id':run_id,'seed':seed,'head_seed':head_seed,'dataset':domain,'class_order':CLASSES,
                'student':student,'data':copy.deepcopy(info['manifest']),'teachers':teachers,'clip_base':copy.deepcopy(paths.get('clip_base')),
                'batch_size':32,'workers':paths.get('workers',4),
                'optimizer':{'backbone_lr':1e-5 if domain=='sfew' else 3e-5,'new_lr':1e-4 if domain=='sfew' else 3e-4,'weight_decay':.01,'betas':[.9,.98],'eps':1e-6,'grad_clip':1.,'amp':'bf16_if_supported_else_fp32'},
@@ -90,16 +108,18 @@ def prepare_experiments(paths_path,out,*,datasets=('rafdb',),experiments=None):
                'sampling':row['sampling'],'diagnostics':{'gradient_interval':1000},
                'comparison':{'experiment':name,'parent':row['parent'],'group':row['group'],
                              'note':'F_recommended combines two changes; E1/E3 change backbone capacity and initialization source, not just scan type'},
-               'output':str(output_root/domain/name),'init_id':init_id,'init_path':str(output_root/'initializations'/(init_id+'.pt')),
+               'output':str(output_root/domain/run_name),'init_id':init_id,'init_path':str(output_root/'initializations'/(init_id+'.pt')),
                'checkpoint':{'resume_contract':'epoch_boundary_only','selection':['max_uar','max_accuracy','earlier_epoch'],'s1_selection':'min_feature_loss'},
                'code':code,'environment':env}
+            if name in ['R4','R5','R6']: c['comparison']['refinement_base']=refinement_base
             validate_experiment(c)
-            path=out/(domain+'__'+name+'.json'); atomic_json(path,c)
+            path=out/(domain+'__'+run_name+'.json'); atomic_json(path,c)
             runs.append({'run_id':run_id,'config':str(path),'config_hash':fingerprint(c),'stages':len(stages),
                          'updates':steps*epochs,'dependencies':[domain+'/'+key for key in sorted(dependencies)],'state':'implemented','group':row['group']})
     plan={'schema_version':3,'runs':runs,'output_root':str(output_root),'core_only':False,
           'final_protocol':'select on selection_val only; final_eval reserved for reporting',
-          'catalog':rows,'aliases':ALIASES,'unique_student_paths':len(runs),'student_stages':sum(row['stages'] for row in runs)}
+          'catalog':rows,'aliases':ALIASES,'seeds':list(seeds),'refinement_base':refinement_base,
+          'unique_student_paths':len(runs),'student_stages':sum(row['stages'] for row in runs)}
     atomic_json(out/'plan.json',plan)
     return plan
 
@@ -108,19 +128,22 @@ def validate_experiment(c,assets=False):
     from .official_experiments import validate_student_spec
     required={'schema_version','run_id','seed','head_seed','dataset','class_order','student','data','teachers','clip_base','batch_size','workers','optimizer','schedule','stages','preprocess','text','sampling','diagnostics','comparison','output','init_id','init_path','checkpoint','code','environment'}
     if set(c)!=required or c['schema_version']!=3: raise ValueError('Unknown/missing experiment schema fields')
-    if c['seed']!=42 or c['head_seed']!=1042 or c['class_order']!=CLASSES or c['dataset'] not in ['rafdb','sfew','affectnet']: raise ValueError('Experiment class/seed/dataset mismatch')
+    if type(c['seed']) is not int or not 0<=c['seed']<=2**32-1001 or c['head_seed']!=1000+c['seed'] or c['class_order']!=CLASSES or c['dataset'] not in ['rafdb','sfew','affectnet']: raise ValueError('Experiment class/seed/dataset mismatch')
     validate_student_spec(c['student'])
-    name=c['comparison']['experiment']; rows=catalog()
-    if name not in rows or c['run_id']!=c['dataset']+'/'+name: raise ValueError('Unknown experiment ID')
+    name=c['comparison']['experiment']; rows=catalog(c['comparison'].get('refinement_base','R3'))
+    run_name=experiment_run_name(name,c['seed'])
+    if name not in rows or c['run_id']!=c['dataset']+'/'+run_name: raise ValueError('Unknown experiment ID')
     row=rows[name]
     for key,value in row['student'].items():
         if c['student'][key]!=value: raise ValueError('Experiment architecture differs from declared catalog: '+key)
+    for key in ['cnn_auxiliary','cnn_residual']:
+        if c['student'].get(key,False)!=row['student'].get(key,False): raise ValueError('Undeclared CNN refinement switch: '+key)
     if c['sampling']!=row['sampling'] or c['text']['mode']!=row['text_mode']: raise ValueError('Experiment sampling/text differs from catalog')
     if set(c['text'])!={'mode','prototypes'} or (c['text']['mode']=='none' and c['text']['prototypes'] is not None): raise ValueError('Unexpected text assets in a text-disabled experiment')
     if c['batch_size']!=32 or type(c['workers']) is not int or c['workers']<0 or c['preprocess']!=PREPROCESS: raise ValueError('Unsupported batch/preprocessing')
-    if c['init_id']!=model_identity(c['student']): raise ValueError('Model initialization identity mismatch')
+    if c['init_id']!=model_identity(c['student'],c['seed'],c['head_seed']): raise ValueError('Model initialization identity mismatch')
     out=Path(c['output']); init=Path(c['init_path'])
-    if not out.is_absolute() or out.parts[-2:]!=(c['dataset'],name) or init!=out.parents[1]/'initializations'/(c['init_id']+'.pt'): raise ValueError('Invalid experiment output/initialization path')
+    if not out.is_absolute() or out.parts[-2:]!=(c['dataset'],run_name) or init!=out.parents[1]/'initializations'/(c['init_id']+'.pt'): raise ValueError('Invalid experiment output/initialization path')
     expected_epochs={'rafdb':60,'sfew':50,'affectnet':30}[c['dataset']]
     expected_stages=['s1','s2'] if row['two_stage'] else ['s2']
     if [stage['name'] for stage in c['stages']]!=expected_stages or sum(stage['epochs'] for stage in c['stages'])!=expected_epochs: raise ValueError('Experiment stage budget changed')

@@ -42,7 +42,7 @@ def assert_exact_tree(actual,expected,path='state'):
 def audit_init(c,gpu=False):
     # Does not require teachers: CE initialization auditing remains independent.
     check_asset(c['student']['pretrained']) if c['student']['initialization']=='pretrained' and c['student']['pretrained'] is not None else None
-    torch.set_num_threads(2); seed_all(42)
+    torch.set_num_threads(2); seed_all(c['seed'])
     model,report,init_sha=student_from_init(c); report=dict(report)
     report['init_snapshot_sha256']=init_sha; report['gpu_accepted']=False; report['config_hash']=fingerprint(c)
     pg=groups(model,c['optimizer']); report['parameter_groups']=[{k:v for k,v in g.items() if k!='params'} for g in pg]
@@ -95,7 +95,7 @@ def fit(c,max_updates=1000):
     if not 1<=max_updates<=1000: raise ValueError('Fit diagnostic capped at 1000 updates')
     root=Path(c['output']).parents[1]
     with gpu_lease(root):
-        seed_all(42); m=manifest(c['data']); indices=[]
+        seed_all(c['seed']); m=manifest(c['data']); indices=[]
         for label in range(7): indices.extend([i for i,r in enumerate(m['samples']['train']) if r['label']==label][:8])
         if len(indices)!=56: raise ValueError('Need 8 training examples per class')
         model,report=make_student(c); model.cuda(); configure_stage(model,'s2')
@@ -110,7 +110,7 @@ def fit(c,max_updates=1000):
         weights={'ce':1.,'feature':0.,'logits':0.,'temperature':2.}; amp=torch.cuda.is_bf16_supported(); device=torch.device('cuda')
         from torch.utils.data import DataLoader
         data=PairedDataset(m,'train',augment=False,indices=indices)
-        batches=DataLoader(data,batch_size=32,shuffle=True,drop_last=False,num_workers=0,generator=torch.Generator().manual_seed(42))
+        batches=DataLoader(data,batch_size=32,shuffle=True,drop_last=False,num_workers=0,generator=torch.Generator().manual_seed(c['seed']))
         report={'config_hash':fingerprint(c),'samples':56,'sample_ids':[m['samples']['train'][i]['path'] for i in indices],
                 'overrides':['no augmentation','no KD','no weight decay','no dropout/stochastic depth'],'curves':[],'accepted':False}
         update=0; begin=time.perf_counter()
@@ -169,7 +169,7 @@ def audit_resume(c):
     from .checkpoint import restore
     root=Path(c['output']).parents[1]
     with gpu_lease(root):
-        seed_all(42); model,_=make_student(c); model.cuda(); configure_stage(model,'s2')
+        seed_all(c['seed']); model,_=make_student(c); model.cuda(); configure_stage(model,'s2')
         opt=torch.optim.AdamW(groups(model,c['optimizer']),betas=(.9,.98),eps=1e-6)
         schedule=UpdateCosine(opt,10,1); scaler=torch.amp.GradScaler('cuda',enabled=False)
         identity={'config_hash':fingerprint(c),'test':'GPU_real_two_step_state_restore'}; device=torch.device('cuda')

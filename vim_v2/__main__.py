@@ -109,20 +109,34 @@ def aggregate(plan_path):
             cfg=read(run['config']); parent=cfg['comparison']['parent']
             if parent:
                 parent=p.get('aliases',{}).get(parent,parent)
-                pairs.append((run['run_id']+'_vs_'+parent,run['run_id'],cfg['dataset']+'/'+parent))
+                from .experiments import experiment_run_name
+                pairs.append((run['run_id']+'_vs_'+parent,run['run_id'],cfg['dataset']+'/'+experiment_run_name(parent,cfg['seed'])))
             name=cfg['comparison']['experiment']
             if name.startswith('T3_w'):
                 simple=name.replace('T3_w','T2_w',1)
-                pairs.append((run['run_id']+'_vs_'+simple,run['run_id'],cfg['dataset']+'/'+simple))
+                pairs.append((run['run_id']+'_vs_'+simple,run['run_id'],cfg['dataset']+'/'+experiment_run_name(simple,cfg['seed'])))
         conclusions={'scope':'Catalog comparisons; combined variants are labeled, not single-factor evidence.',
                      'text':'Use semantic audits and per-class results; FER head accuracy alone does not establish compatibility.',
-                     'uncertainty':'seed42 only; no significance or seed variance claims'}
+                     'uncertainty':'Read planned/completed seeds in seed_summary; seed dispersion and paired image bootstrap describe different uncertainty sources.'}
     for label,left,right in pairs:
         a,b=by_id.get(left),by_id.get(right)
         if a is None or b is None:
             comparisons[label]={'left':left,'right':right,'state':'reference_not_in_selected_plan'}; continue
         comparisons[label]={'left':left,'right':right,'delta_percentage_points':{k:100*(a[k]-b[k]) if a[k] is not None and b[k] is not None else None for k in ['accuracy','uar','macro_f1']}}
     result={'results':rows,'comparisons':comparisons,'analysis':conclusions,'protocol':p['final_protocol']}
+    if p.get('schema_version')==3:
+        import statistics
+        buckets={}
+        for run in p['runs']:
+            cfg=read(run['config']); key=cfg['dataset']+'/'+cfg['comparison']['experiment']
+            buckets.setdefault(key,[]).append((cfg['seed'],by_id[run['run_id']]))
+        result['seed_summary']={}
+        for key,items in buckets.items():
+            complete=[(seed,row) for seed,row in items if row['accuracy'] is not None]
+            result['seed_summary'][key]={'planned_seeds':[seed for seed,_ in items],'completed_seeds':[seed for seed,_ in complete],
+                'metrics':{metric:{'mean':statistics.mean([row[metric] for _,row in complete]) if complete else None,
+                                  'sample_std':statistics.stdev([row[metric] for _,row in complete]) if len(complete)>1 else None}
+                           for metric in ['accuracy','uar','macro_f1']}}
     root=Path(p['output_root'])/'reports'; atomic_json(root/'results.json',result)
     with (root/'results.csv').open('w',newline='') as f:
         writer=csv.DictWriter(f,fieldnames=list(rows[0])); writer.writeheader(); writer.writerows(rows)
@@ -141,13 +155,18 @@ def main():
     sub.add_parser('list-experiments')
     q=sub.add_parser('prepare-experiments'); q.add_argument('--paths',required=True); q.add_argument('--output',required=True)
     q.add_argument('--datasets',nargs='+',default=['rafdb']); q.add_argument('--experiments',nargs='+')
+    q.add_argument('--refinement-base',choices=['R0','R1','R2','R3'],default='R3')
+    q.add_argument('--seeds',type=int,nargs='+',default=[42])
+    q=sub.add_parser('paired-bootstrap'); q.add_argument('--baseline',required=True); q.add_argument('--candidate',required=True)
+    q.add_argument('--output',required=True); q.add_argument('--resamples',type=int,default=2000)
+    q.add_argument('--seed',type=int,default=42); q.add_argument('--split',choices=['selection_val','final_eval'],default='selection_val')
     q=sub.add_parser('prepare-text'); q.add_argument('--paths',required=True); q.add_argument('--output',required=True); q.add_argument('--device',default='cpu')
     for command in ['validate-plan','budget','lock-plan','aggregate','run-plan','verify']:
         q=sub.add_parser(command); q.add_argument('--plan',required=True)
         if command=='validate-plan': q.add_argument('--dry-run',action='store_true')
         if command=='run-plan':
             q.add_argument('--resume-incomplete',action='store_true')
-            q.add_argument('--group',choices=['diagnostic','core','architecture','branches','combined','supervision','text','augmentation','imbalance'],default='core')
+            q.add_argument('--group',choices=['diagnostic','core','architecture','branches','combined','supervision','text','augmentation','imbalance','refinement','refinement_followup'],default='core')
         if command=='verify': q.add_argument('--gpu',action='store_true')
     for command in ['audit-data','audit-init','smoke','fit','run','resume','evaluate','audit-teacher','audit-resume','benchmark','audit-semantics','diagnose-branches']:
         q=sub.add_parser(command); q.add_argument('--config',required=True)
@@ -172,7 +191,10 @@ def main():
         result={'experiments':catalog(),'aliases':ALIASES}
     elif a.cmd=='prepare-experiments':
         from .experiments import prepare_experiments
-        result=prepare_experiments(a.paths,a.output,datasets=a.datasets,experiments=a.experiments)
+        result=prepare_experiments(a.paths,a.output,datasets=a.datasets,experiments=a.experiments,refinement_base=a.refinement_base,seeds=a.seeds)
+    elif a.cmd=='paired-bootstrap':
+        from .statistics import paired_bootstrap
+        result=paired_bootstrap(a.baseline,a.candidate,resamples=a.resamples,seed=a.seed,split=a.split); atomic_json(a.output,result)
     elif a.cmd=='prepare-text':
         from .semantics import prepare_prototypes
         result=prepare_prototypes(a.paths,a.output,a.device)
@@ -235,6 +257,7 @@ def main():
         plan=read(a.plan); done=set(); result=[]
         if plan.get('schema_version')==3:
             subprocess.run([sys.executable,'-m','pytest',str(PROJECT/'tests/test_experiment_suite.py'),
+                            str(PROJECT/'tests/test_cnn_refinement.py'),
                             str(PROJECT/'tests/test_vmamba.py'),str(PROJECT/'tests/test_sasf.py'),
                             str(PROJECT/'tests/test_vision_mamba_clip.py'),'-q'],check=True,cwd=PROJECT)
         for row in plan['runs']:
