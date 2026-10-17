@@ -3,7 +3,7 @@ from collections import Counter
 from pathlib import Path
 import torch
 from PIL import Image
-from torch.utils.data import Dataset,DataLoader
+from torch.utils.data import Dataset,DataLoader,WeightedRandomSampler
 from torchvision import transforms as T
 from torchvision.transforms import functional as TF
 from .common import CLASSES,check_asset,read,fingerprint,sha
@@ -52,9 +52,22 @@ class PairedDataset(Dataset):
         return {'image_student':TF.normalize(raw,IM_MEAN,IM_STD),'image_teacher':TF.normalize(raw,CLIP_MEAN,CLIP_STD),
                 'label':row['label'],'sample_id':row['path']}
 
+def class_weights(rows):
+    counts=torch.bincount(torch.tensor([row['label'] for row in rows]),minlength=7).float()
+    if (counts==0).any(): raise ValueError('Class balancing requires all seven training classes')
+    weights=counts.reciprocal()
+    return weights/weights.mean()
+
+
 def loader(cfg,split,epoch=0,augment=True,indices=None):
     m=manifest(cfg['data']); ds=PairedDataset(m,split,cfg['seed'],epoch,augment,indices)
-    return DataLoader(ds,batch_size=cfg['batch_size'],shuffle=split=='train',drop_last=split=='train',
+    sampler=None
+    if split=='train' and cfg.get('sampling')=='balanced':
+        weights=class_weights(ds.rows)
+        sample_weights=weights[torch.tensor([row['label'] for row in ds.rows])]
+        sampler=WeightedRandomSampler(sample_weights,len(ds),replacement=True,
+                                      generator=torch.Generator().manual_seed(cfg['seed']+epoch+17))
+    return DataLoader(ds,batch_size=cfg['batch_size'],shuffle=split=='train' and sampler is None,sampler=sampler,drop_last=split=='train',
         generator=torch.Generator().manual_seed(cfg['seed']+epoch),num_workers=cfg['workers'],pin_memory=True,persistent_workers=False)
 
 def audit(cfg,decode=True):

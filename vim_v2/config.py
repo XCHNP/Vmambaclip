@@ -11,6 +11,9 @@ PREPROCESS={'geometry_version':'shared_rgb256_rrc09_flip05_v2','student_normaliz
     'resize_size':256,'eval_crop_size':256,'rgb':True,'interpolation':'bicubic','antialias':True,
     'train_drop_last':True,'eval_drop_last':False,'ce_weighting':'unweighted'}
 def validate(c,assets=False):
+    if c.get('schema_version')==3:
+        from .experiments import validate_experiment
+        return validate_experiment(c,assets=assets)
     required={'schema_version','run_id','seed','head_seed','dataset','class_order','student','data','teachers','clip_base','batch_size','workers','optimizer','schedule','stages','preprocess','output','init_id','init_path','checkpoint','code','environment'}
     if set(c)!=required: raise ValueError('Unknown/missing config fields '+str(set(c)^required))
     if c['schema_version']!=2 or c['seed']!=42 or c['class_order']!=CLASSES or c['dataset'] not in ['rafdb','sfew','affectnet']: raise ValueError('Invalid core schema')

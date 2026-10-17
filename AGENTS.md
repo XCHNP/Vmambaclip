@@ -10,6 +10,9 @@
 
 ## 学生骨干替换（用户于 2026-10-17 确认）
 
+- 用户后续要求按最终分析用一份代码覆盖所有实验：当前统一入口为 `python -m vim_v2 prepare-experiments`（schema 3），说明见 `docs/UNIFIED_EXPERIMENTS_2026-10-17.md`。Vim 仅作为 E1/E2 明确对照，主体仍为 VMamba-T s1l8。
+- 多尺度 CNN、SASF e/m/l、多 Query、文本原型监督、KD/affinity 和类别采样均由实验配置控制；不能把不同配方的结果混作单因素结论。此轮没有额外授权云端训练或恢复暂停任务。
+
 - 当前开发目标改为官方 VMamba-T（Tiny，s1l8，SS2D/Cross-Scan），替换此前开发模型中的 Vim；覆盖历史文档中禁止替换为 VMamba 的架构限制。
 - 学生加入 SASF，并使用 VMamba 全局 Query、CNN 空间 tokens 作为 Key/Value 的跨分支注意力，保留全局特征补充融合。
 - 新入口为 `python -m vim_v2 prepare-vmamba`；旧 Vim 配置/初始化/训练记录仅作为历史，不能当作 VMamba 结果或直接续训。

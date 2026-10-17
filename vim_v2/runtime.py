@@ -52,7 +52,7 @@ def forward_loss(model,teacher,batch,weights,device):
     logits=output if isinstance(output,torch.Tensor) else output.logits
     feature=None if isinstance(output,torch.Tensor) else output.fused_raw
     target=None
-    if weights['feature'] or weights['logits']:
+    if weights['feature'] or weights['logits'] or weights.get('affinity',0):
         if teacher is None: raise ValueError('Active distillation requires verified teacher')
         teacher.eval()
         with torch.no_grad():
@@ -60,7 +60,8 @@ def forward_loss(model,teacher,batch,weights,device):
             target={'feature':feature_t}
             if weights['logits']: target['logits']=teacher.classifier(feature_t)
     # Autocast explicitly disabled for numerically sensitive FP32 loss arithmetic.
-    with torch.autocast(device.type,enabled=False): loss,raw,weighted=objectives(logits,feature,labels,weights,target)
+    prototypes=getattr(model,'_text_prototypes',None) if weights.get('text',0) else None
+    with torch.autocast(device.type,enabled=False): loss,raw,weighted=objectives(logits,feature,labels,weights,target,prototypes)
     return loss,logits,raw,weighted
 
 def metrics(matrix):
@@ -129,6 +130,9 @@ def _run(c,root,resume,smoke,max_updates):
     if not smoke and not resume and any((out/x).exists() for x in ['last.pt','best.pt','effective_config.json']): raise FileExistsError('Use resume; run directory already exists')
     if resume and not (out/'last.pt').exists(): raise FileNotFoundError('Resume requires complete last.pt')
     model,init_report,init_sha=student_from_init(c); model.to(device)
+    if c.get('schema_version')==3 and c['text']['mode']!='none':
+        from .semantics import load_prototypes
+        model._text_prototypes=load_prototypes(c,device)
     pg=groups(model,c['optimizer']); optimizer=torch.optim.AdamW(pg,betas=tuple(c['optimizer']['betas']),eps=c['optimizer']['eps'])
     # Smoke tests exercise representable updates at the recipe's peak LR. The
     # full-horizon first warmup step can be smaller than FP32 ULP for pretrained
@@ -161,11 +165,16 @@ def _run(c,root,resume,smoke,max_updates):
         if smoke: epochs=[0]+([c['stages'][0]['epochs']] if len(c['stages'])==2 else [])
         for epoch in epochs:
             stage=split_stage(c,epoch); configure_stage(model,stage['name'])
+            loss_weights=dict(stage['loss'])
+            if c.get('sampling')=='weighted_ce':
+                from .data import class_weights
+                loss_weights['class_weights']=class_weights(manifest(c['data'])['samples']['train']).tolist()
             if not smoke and len(c['stages'])==2 and stage['name']=='s2' and stage_parent is None:
                 stage_parent=record_stage_transition(out,model,optimizer,scheduler,c['stages'][0]['epochs'])
             stage_config=out/'stages'/stage['name']/'effective_config.json'
             if not stage_config.exists():
                 atomic_json(stage_config,{'run_identity':identity,'stage':stage,
+                    'effective_loss_weights':loss_weights,
                     'entry_global_update':scheduler.updates,'s1_last_parent_sha256':stage_parent})
             frozen_head_digest=tensor_digest(model.classifier.state_dict()) if stage['name']=='s1' else None
             if stage['teacher']!=teacher_stage:
@@ -179,8 +188,13 @@ def _run(c,root,resume,smoke,max_updates):
                 selected=probes(model) if deep_probe else {}
                 before={k:p.detach().clone() for k,(name,p) in selected.items()}
                 torch.cuda.synchronize(); t=time.perf_counter()
-                with torch.autocast('cuda',dtype=torch.bfloat16,enabled=amp): loss,logits,raw,weighted=forward_loss(model,teacher,b,stage['loss'],device)
+                with torch.autocast('cuda',dtype=torch.bfloat16,enabled=amp): loss,logits,raw,weighted=forward_loss(model,teacher,b,loss_weights,device)
                 if not torch.isfinite(loss): raise FloatingPointError('Nonfinite loss')
+                objective_gradients=None
+                interval=c.get('diagnostics',{}).get('gradient_interval',0)
+                if interval and (scheduler.updates%interval==0) and hasattr(model,'fusion_projection'):
+                    from .losses import gradient_report
+                    objective_gradients=gradient_report(weighted,model.fusion_projection.weight)
                 scaler.scale(loss).backward(); scaler.unscale_(optimizer)
                 norm=torch.nn.utils.clip_grad_norm_(model.parameters(),c['optimizer']['grad_clip'])
                 if not torch.isfinite(norm): raise FloatingPointError('Nonfinite gradient')
@@ -193,6 +207,9 @@ def _run(c,root,resume,smoke,max_updates):
                         'raw':{k:float(v) for k,v in raw.items()},'weighted':{k:float(v) for k,v in weighted.items()},
                         'grad_norm':float(norm),'probe_names':{k:name for k,(name,p) in selected.items()},'probe_gradient_norms':grad,
                         'probe_update_norms':delta,'lr':[g['lr'] for g in optimizer.param_groups],'seconds':sec}
+                if objective_gradients is not None: record['objective_gradients']=objective_gradients
+                if deep_probe and hasattr(model,'last_diagnostics'):
+                    record['branch_diagnostics']={name:float(value) for name,value in model.last_diagnostics.items()}
                 with (out/'updates.jsonl').open('a') as f: f.write(json.dumps(record)+'\n')
                 probes_report.append(record) if smoke else None
                 if smoke:

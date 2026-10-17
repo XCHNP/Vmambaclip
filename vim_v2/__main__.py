@@ -46,6 +46,7 @@ def lock_plan(plan_path):
         c=read(row['config']); rid=row['run_id']; name=rid.replace('/','__')
         files=[root/(c['dataset']+'_data.json'),root/(name+'_init_gpu.json'),root/name/'smoke.json',root/('fit_'+fit_key(c)+'.json'),root/(name+'_resume_gpu.json')]
         files += [root/(c['dataset']+'_'+s['teacher']+'_teacher.json') for s in c['stages'] if s['teacher']]
+        if c.get('schema_version')==3 and c['text']['mode']!='none': files.append(root/(name+'_semantics.json'))
         try:
             validate(c,assets=True)
             if fingerprint(c)!=row['config_hash']: raise ValueError('Plan config identity changed')
@@ -56,6 +57,7 @@ def lock_plan(plan_path):
                 if path.name.endswith('_data.json') and item['manifest_sha256']!=c['data']['sha256']: raise ValueError('Stale data audit')
                 if path.name.startswith('fit_') and item['fit_key']!=fit_key(c): raise ValueError('Stale fit audit')
                 if path.name.endswith('_teacher.json') and item['teacher_sha256']!=c['teachers'][item['stage']]['sha256']: raise ValueError('Stale teacher audit')
+                if path.name.endswith('_semantics.json') and item['prototypes_sha256']!=c['text']['prototypes']['sha256']: raise ValueError('Stale prototype audit')
             smoke=read(root/name/'smoke.json'); disk=smoke['parameters']*4*(11 if len(c['stages'])==2 else 7)
             if shutil.disk_usage(Path(plan['output_root'])).free<disk+4*1024**3: raise ValueError('Insufficient disk reserve')
             accepted.append(rid); evidence.extend({'path':str(f.resolve()),'sha256':sha(f)} for f in files)
@@ -68,7 +70,7 @@ def lock_plan(plan_path):
     atomic_json(lock,result); return result
 
 def aggregate(plan_path):
-    p=read(plan_path); rows=[]
+    p=read(plan_path); rows=[]; class_rows=[]
     for run in p['runs']:
         c=read(run['config']); out=Path(c['output']); f=out/'final_metrics.json'; state=read(out/'status.json') if (out/'status.json').exists() else {'state':'not_started'}
         row={'run_id':run['run_id'],'state':state['state'],'accuracy':None,'uar':None,'macro_f1':None,'updates':run['updates']}
@@ -90,6 +92,7 @@ def aggregate(plan_path):
             recalculated=metrics(matrix)
             if any(abs(recalculated[k]-data['metrics'][k])>1e-10 for k in ['accuracy','uar','macro_f1']): raise ValueError('Prediction/metric mismatch')
             row.update({k:recalculated[k] for k in ['accuracy','uar','macro_f1']})
+            class_rows.extend(dict(run_id=run['run_id'],class_name=c['class_order'][item['class_index']],**item) for item in recalculated['per_class'])
         rows.append(row)
     conclusions={'pretraining':'pending A2-A1 and A4-A3','budget':'pending A3-A1 and A4-A2','KD':'pending matched Hybrid results',
                  'two_stage':'pending; teacher switch, S1 without CE, and loss schedule remain different',
@@ -100,13 +103,31 @@ def aggregate(plan_path):
            ('budget_random','rafdb/native_random_60','rafdb/native_random_30'),('budget_pretrained','rafdb/native_ce','rafdb/native_pretrained_30')]
     for d in ['rafdb','sfew','affectnet']:
         pairs.extend([(d+'_logits_vs_ce',d+'/hybrid_logits_kd',d+'/hybrid_ce'),(d+'_feature_vs_ce',d+'/hybrid_feature_kd',d+'/hybrid_ce'),(d+'_two_stage_vs_feature',d+'/full_v2',d+'/hybrid_feature_kd')])
+    if p.get('schema_version')==3:
+        pairs=[]
+        for run in p['runs']:
+            cfg=read(run['config']); parent=cfg['comparison']['parent']
+            if parent:
+                parent=p.get('aliases',{}).get(parent,parent)
+                pairs.append((run['run_id']+'_vs_'+parent,run['run_id'],cfg['dataset']+'/'+parent))
+            name=cfg['comparison']['experiment']
+            if name.startswith('T3_w'):
+                simple=name.replace('T3_w','T2_w',1)
+                pairs.append((run['run_id']+'_vs_'+simple,run['run_id'],cfg['dataset']+'/'+simple))
+        conclusions={'scope':'Catalog comparisons; combined variants are labeled, not single-factor evidence.',
+                     'text':'Use semantic audits and per-class results; FER head accuracy alone does not establish compatibility.',
+                     'uncertainty':'seed42 only; no significance or seed variance claims'}
     for label,left,right in pairs:
-        a,b=by_id[left],by_id[right]
+        a,b=by_id.get(left),by_id.get(right)
+        if a is None or b is None:
+            comparisons[label]={'left':left,'right':right,'state':'reference_not_in_selected_plan'}; continue
         comparisons[label]={'left':left,'right':right,'delta_percentage_points':{k:100*(a[k]-b[k]) if a[k] is not None and b[k] is not None else None for k in ['accuracy','uar','macro_f1']}}
     result={'results':rows,'comparisons':comparisons,'analysis':conclusions,'protocol':p['final_protocol']}
     root=Path(p['output_root'])/'reports'; atomic_json(root/'results.json',result)
     with (root/'results.csv').open('w',newline='') as f:
         writer=csv.DictWriter(f,fieldnames=list(rows[0])); writer.writeheader(); writer.writerows(rows)
+    with (root/'per_class.csv').open('w',newline='') as f:
+        writer=csv.DictWriter(f,fieldnames=['run_id','class_name','class_index','precision','recall','f1','support']); writer.writeheader(); writer.writerows(class_rows)
     return result
 
 def main():
@@ -117,18 +138,26 @@ def main():
     q.add_argument('--use-sasf',action='store_true'); q.add_argument('--cross-branch-fusion',action='store_true')
     q=sub.add_parser('prepare-vmamba'); q.add_argument('--paths',required=True); q.add_argument('--output',required=True)
     q.add_argument('--no-sasf',action='store_true'); q.add_argument('--legacy-fusion',action='store_true')
+    sub.add_parser('list-experiments')
+    q=sub.add_parser('prepare-experiments'); q.add_argument('--paths',required=True); q.add_argument('--output',required=True)
+    q.add_argument('--datasets',nargs='+',default=['rafdb']); q.add_argument('--experiments',nargs='+')
+    q=sub.add_parser('prepare-text'); q.add_argument('--paths',required=True); q.add_argument('--output',required=True); q.add_argument('--device',default='cpu')
     for command in ['validate-plan','budget','lock-plan','aggregate','run-plan','verify']:
         q=sub.add_parser(command); q.add_argument('--plan',required=True)
         if command=='validate-plan': q.add_argument('--dry-run',action='store_true')
-        if command=='run-plan': q.add_argument('--resume-incomplete',action='store_true'); q.add_argument('--group',choices=['diagnostic','core'],default='core')
+        if command=='run-plan':
+            q.add_argument('--resume-incomplete',action='store_true')
+            q.add_argument('--group',choices=['diagnostic','core','architecture','branches','combined','supervision','text','augmentation','imbalance'],default='core')
         if command=='verify': q.add_argument('--gpu',action='store_true')
-    for command in ['audit-data','audit-init','smoke','fit','run','resume','evaluate','audit-teacher','audit-resume','benchmark']:
+    for command in ['audit-data','audit-init','smoke','fit','run','resume','evaluate','audit-teacher','audit-resume','benchmark','audit-semantics','diagnose-branches']:
         q=sub.add_parser(command); q.add_argument('--config',required=True)
         if command in ['run','resume','evaluate','benchmark']: q.add_argument('--plan',required=True)
         if command=='evaluate': q.add_argument('--split',choices=['selection_val','final_eval'],required=True); q.add_argument('--require-locked-plan',action='store_true')
         if command=='audit-init': q.add_argument('--gpu',action='store_true')
         if command in ['fit','smoke']: q.add_argument('--max-updates',type=int,default=1000 if command=='fit' else 4)
         if command=='audit-teacher': q.add_argument('--stage',choices=['t1','t2'],required=True)
+        if command in ['audit-semantics','diagnose-branches']: q.add_argument('--device',default='cpu')
+        if command=='audit-semantics': q.add_argument('--teacher-stage',choices=['t1','t2'],default='t2')
     a=parser.parse_args(); result=None
     from .config import prepare
     from .runtime import run,evaluate_run
@@ -138,6 +167,15 @@ def main():
     if a.cmd=='inventory': result={'environment':environment(),'code':code_identity()}; atomic_json(a.output,result)
     elif a.cmd=='prepare-v2': result=prepare(a.paths,a.output,use_sasf=a.use_sasf,cross_branch_fusion=a.cross_branch_fusion)
     elif a.cmd=='prepare-vmamba': result=prepare(a.paths,a.output,backbone='vmamba',use_sasf=not a.no_sasf,cross_branch_fusion=not a.legacy_fusion)
+    elif a.cmd=='list-experiments':
+        from .experiments import catalog,ALIASES
+        result={'experiments':catalog(),'aliases':ALIASES}
+    elif a.cmd=='prepare-experiments':
+        from .experiments import prepare_experiments
+        result=prepare_experiments(a.paths,a.output,datasets=a.datasets,experiments=a.experiments)
+    elif a.cmd=='prepare-text':
+        from .semantics import prepare_prototypes
+        result=prepare_prototypes(a.paths,a.output,a.device)
     elif a.cmd=='validate-plan': result=preflight(a.plan); atomic_json(Path(a.plan).with_name('preflight.json'),result)
     elif a.cmd=='budget': result=budget(a.plan); atomic_json(Path(a.plan).with_name('budget.json'),result)
     elif a.cmd=='lock-plan': result=lock_plan(a.plan)
@@ -149,6 +187,12 @@ def main():
     elif a.cmd=='fit': result=fit(c,a.max_updates); result['fit_key']=fit_key(c); atomic_json(root/('fit_'+fit_key(c)+'.json'),result)
     elif a.cmd=='audit-teacher': result=audit_teacher(c,a.stage); atomic_json(root/(c['dataset']+'_'+a.stage+'_teacher.json'),result)
     elif a.cmd=='audit-resume': result=audit_resume(c); atomic_json(root/(name+'_resume_gpu.json'),result)
+    elif a.cmd=='audit-semantics':
+        from .diagnostics import audit_semantics
+        result=audit_semantics(c,a.teacher_stage,a.device); atomic_json(root/(name+'_semantics.json'),result)
+    elif a.cmd=='diagnose-branches':
+        from .diagnostics import diagnose_branches
+        result=diagnose_branches(c,a.device); atomic_json(Path(c['output'])/'branch_diagnostics.json',result)
     elif a.cmd=='smoke': result=run(c,smoke=True,max_updates=a.max_updates)
     elif a.cmd in ['run','resume']: result=run(c,a.plan,resume=a.cmd=='resume')
     elif a.cmd=='evaluate': result=evaluate_run(c,a.plan,'test' if a.split=='final_eval' else 'val')
@@ -177,6 +221,7 @@ def main():
         plan=read(a.plan); qualified=read(Path(a.plan).with_name('plan.lock'))['qualified_runs']; result=[]
         for row in plan['runs']:
             if a.group=='diagnostic' and not (row['run_id'].startswith('rafdb/native')): continue
+            if a.group not in ['core','diagnostic'] and row.get('group')!=a.group: continue
             if row['run_id'] not in qualified: result.append({'run_id':row['run_id'],'state':'blocked'}); continue
             cfg=read(row['config']); out=Path(cfg['output']); status=read(out/'status.json') if (out/'status.json').exists() else {}
             if status.get('state') in ['completed','trained_pending_final_evaluation']:
@@ -188,6 +233,10 @@ def main():
         import subprocess
         subprocess.run([sys.executable,'-m','unittest','discover','-s',str(PROJECT/'tests_vim_v2'),'-v'],check=True)
         plan=read(a.plan); done=set(); result=[]
+        if plan.get('schema_version')==3:
+            subprocess.run([sys.executable,'-m','pytest',str(PROJECT/'tests/test_experiment_suite.py'),
+                            str(PROJECT/'tests/test_vmamba.py'),str(PROJECT/'tests/test_sasf.py'),
+                            str(PROJECT/'tests/test_vision_mamba_clip.py'),'-q'],check=True,cwd=PROJECT)
         for row in plan['runs']:
             cfg=read(row['config']); root=evidence_root(plan); name=cfg['run_id'].replace('/','__')
             try:
@@ -205,6 +254,9 @@ def main():
                         key=cfg['dataset']+'_'+str(st['teacher'])
                         if st['teacher'] and key not in done:
                             atomic_json(root/(key+'_teacher.json'),audit_teacher(cfg,st['teacher'])); done.add(key)
+                    if cfg.get('schema_version')==3 and cfg['text']['mode']!='none':
+                        from .diagnostics import audit_semantics
+                        atomic_json(root/(name+'_semantics.json'),audit_semantics(cfg,device='cuda'))
                 result.append({'run_id':row['run_id'],'state':'gpu_checks_executed' if a.gpu else 'cpu_checks_only'})
             except Exception as e: result.append({'run_id':row['run_id'],'state':'blocked','reason':str(e)})
         atomic_json(evidence_root(plan)/'verification.json',result)

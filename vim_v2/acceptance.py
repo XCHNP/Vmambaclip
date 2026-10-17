@@ -41,7 +41,7 @@ def assert_exact_tree(actual,expected,path='state'):
 
 def audit_init(c,gpu=False):
     # Does not require teachers: CE initialization auditing remains independent.
-    check_asset(c['student']['pretrained']) if c['student']['initialization']=='pretrained' else None
+    check_asset(c['student']['pretrained']) if c['student']['initialization']=='pretrained' and c['student']['pretrained'] is not None else None
     torch.set_num_threads(2); seed_all(42)
     model,report,init_sha=student_from_init(c); report=dict(report)
     report['init_snapshot_sha256']=init_sha; report['gpu_accepted']=False; report['config_hash']=fingerprint(c)
@@ -49,8 +49,9 @@ def audit_init(c,gpu=False):
     report['parameters']=sum(p.numel() for p in model.parameters())
     if gpu:
         with gpu_lease(Path(c['output']).parents[1]):
-            vmamba=c['student']['architecture'].startswith('vmamba_')
-            for size in [224,256]:
+            family=c['student'].get('backbone_family')
+            vmamba=family=='vmamba' or c['student']['architecture'].startswith('vmamba_')
+            for size in ([] if family=='cnn' else [224,256]):
                 if vmamba:
                     from open_clip.vision_mamba_clip.official_vmamba import create_official_vmamba
                     spec=c['student']['pretrained']; pretrained=c['student']['initialization']=='pretrained'
@@ -73,11 +74,12 @@ def audit_init(c,gpu=False):
                 del backbone,x
             # Test actual Hybrid hooks under activation checkpointing, including gradients.
             model.cuda().train(); x=next(iter(loader(c,'train')))['image_student'][:2].cuda()
-            backbone=model.backbone if hasattr(model,'backbone') else (model.vim if vmamba else model.vim.backbone)
+            backbone=None if family=='cnn' else (model.backbone if hasattr(model,'backbone') else (model.vim if vmamba else model.vim.backbone))
             saved_rng=rng_state(); states=[]; outputs=[]
             initial={k:v.detach().clone() for k,v in model.state_dict().items()}
             for enabled in [False,False,True]:
-                model.load_state_dict(initial); model.zero_grad(set_to_none=True); restore_rng(saved_rng); backbone.set_grad_checkpointing(enabled)
+                model.load_state_dict(initial); model.zero_grad(set_to_none=True); restore_rng(saved_rng)
+                if backbone is not None: backbone.set_grad_checkpointing(enabled)
                 r=model(x); y=r if torch.is_tensor(r) else r.logits; outputs.append(y.detach())
                 y.float().square().mean().backward()
                 states.append({k:p.grad.detach().clone() for k,p in model.named_parameters() if p.grad is not None})
@@ -100,6 +102,7 @@ def fit(c,max_updates=1000):
         # Explicit diagnostic override only: no augmentation, KD, weight decay, or stochastic depth/dropout.
         for module in model.modules():
             if hasattr(module,'drop_prob'): module.drop_prob=0.
+            if hasattr(module,'patch_dropout'): module.patch_dropout=0.
             if isinstance(module,torch.nn.Dropout): module.p=0.
         pg=groups(model,c['optimizer'])
         for g in pg: g['weight_decay']=0.

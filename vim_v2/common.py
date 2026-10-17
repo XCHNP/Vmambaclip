@@ -51,7 +51,7 @@ def tensor_digest(state):
 def environment():
     import sys, importlib.metadata as md
     versions={}
-    for name in ['torch','torchvision','timm','mamba-ssm','causal-conv1d','numpy','Pillow']:
+    for name in ['torch','torchvision','timm','mamba-ssm','causal-conv1d','triton','fvcore','numpy','Pillow']:
         try: versions[name]=md.version(name)
         except md.PackageNotFoundError: versions[name]=None
     return {'python':sys.version,'versions':versions,'cuda_build':torch.version.cuda,
@@ -62,4 +62,5 @@ def code_identity():
     files += [PROJECT/'src/open_clip/vision_mamba_clip'/x for x in ['official_vim.py','official_vmamba.py','model.py','adapters.py','data.py']]
     files += [PROJECT/'third_party/Vim/vim/models_mamba.py',PROJECT/'third_party/Vim/official_source.json']
     files += [PROJECT/'third_party/VMamba/vmamba.py',PROJECT/'third_party/VMamba/official_source.json']
+    files += [PROJECT/'configs/vision_mamba_clip'/name for name in ['text_simple.json','text_distinctive.json']]
     return {str(p.relative_to(PROJECT)):sha(p) for p in files}

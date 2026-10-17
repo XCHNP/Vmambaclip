@@ -4,7 +4,7 @@ import torch
 def configure_stage(model,stage):
     model.train()
     for name,p in model.named_parameters():
-        permanent=name.startswith('text_to_classifier.') or (name.startswith('vim.') and '.norm_f.' in name)
+        permanent=name in getattr(model,'permanently_frozen_names',set()) or name.startswith('text_to_classifier.') or (name.startswith('vim.') and '.norm_f.' in name)
         p.requires_grad_(not permanent and not (stage=='s1' and name.startswith('classifier.')))
         if not p.requires_grad: p.grad=None
     if hasattr(model,'compute_logits'): model.compute_logits=stage!='s1'
@@ -17,7 +17,7 @@ def groups(model,cfg):
             declared.update((prefix+'.' if prefix else '')+x for x in module.no_weight_decay())
     result={}
     for name,p in model.named_parameters():
-        if name.startswith('text_to_classifier.') or (name.startswith('vim.') and '.norm_f.' in name): continue
+        if name in getattr(model,'permanently_frozen_names',set()) or name.startswith('text_to_classifier.') or (name.startswith('vim.') and '.norm_f.' in name): continue
         backbone=name.startswith(('backbone.','vim.backbone.','cnn_backbone.'))
         no_decay=getattr(p,'_no_weight_decay',False) or name in declared or p.ndim<2 or any(x in name for x in ['pos_embed','cls_token','global_query'])
         key=('backbone' if backbone else 'new')+('_no_decay' if no_decay else '_decay')

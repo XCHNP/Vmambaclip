@@ -61,9 +61,12 @@ def load_student_for_inference(
             raise ValueError("Student checkpoint configuration hash mismatch")
         student, _ = make_student(config, initialize=False)
         student.load_state_dict(payload["model"], strict=True)
-        if config["student"]["architecture"].startswith("vmamba_"):
+        if config["student"]["architecture"].startswith("vmamba_") or (config.get("schema_version")==3 and config["student"]["backbone_family"]!="cnn"):
             encoder = student.vim if hasattr(student, "vim") else student.backbone
-            encoder.set_grad_checkpointing(False)
+            if hasattr(encoder, "set_grad_checkpointing"):
+                encoder.set_grad_checkpointing(False)
+            elif hasattr(encoder, "backbone"):
+                encoder.backbone.set_grad_checkpointing(False)
         student = student.to(device).eval()
         preprocessing = config["preprocess"]
         transform = _build_transform({"size": preprocessing["eval_crop_size"],

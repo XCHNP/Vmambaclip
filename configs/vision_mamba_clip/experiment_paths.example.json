@@ -1,0 +1,36 @@
+{
+  "output_root": "/absolute/cloud/path/fer_experiments_new",
+  "workers": 4,
+  "vmamba": {
+    "path": "/absolute/cloud/path/vssm1_tiny_0230s_ckpt_epoch_264.pth",
+    "sha256": "d855b57224a652bc692804932f88dc3a39b9028e64be99f745a7fd6792ca672a",
+    "model_name": "vmamba_tiny_s1l8"
+  },
+  "vim": {
+    "path": "/absolute/cloud/path/official_vim_small_stride16.pth",
+    "sha256": "aae4583e2def6389b66cfaf292cfade47a873182a39adbec19ec55b730ea9fe3",
+    "model_name": "vim_small_patch16_224_bimambav2_final_pool_mean_abs_pos_embed_with_midclstok_div2"
+  },
+  "cnn": {
+    "path": "/absolute/cloud/path/resnet18-f37072fd.pth",
+    "sha256": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec"
+  },
+  "clip_base": {
+    "path": "/absolute/cloud/path/ViT-L-14.pt",
+    "sha256": "REPLACE_WITH_VERIFIED_CLIP_SHA256"
+  },
+  "text_prototypes": {
+    "simple": {"path": "/absolute/cloud/path/text_assets/simple.pt", "sha256": "REPLACE_WITH_GENERATED_SHA256"},
+    "distinctive": {"path": "/absolute/cloud/path/text_assets/distinctive.pt", "sha256": "REPLACE_WITH_GENERATED_SHA256"}
+  },
+  "datasets": {
+    "rafdb": {
+      "counts": {"train": 0},
+      "manifest": {"path": "/absolute/cloud/path/rafdb/manifest.json", "sha256": "REPLACE_WITH_MANIFEST_FILE_SHA256", "manifest_hash": "REPLACE_WITH_EXISTING_FROZEN_MANIFEST_HASH"},
+      "teachers": {
+        "t1": {"path": "/absolute/cloud/path/rafdb/teacher_t1/best.pt", "sha256": "REPLACE_WITH_T1_SHA256", "completion": {"path": "/absolute/cloud/path/rafdb/teacher_t1/status.json", "sha256": "REPLACE_WITH_COMPLETION_SHA256"}},
+        "t2": {"path": "/absolute/cloud/path/rafdb/teacher_t2/best.pt", "sha256": "REPLACE_WITH_T2_SHA256", "completion": {"path": "/absolute/cloud/path/rafdb/teacher_t2/status.json", "sha256": "REPLACE_WITH_COMPLETION_SHA256"}}
+      }
+    }
+  }
+}

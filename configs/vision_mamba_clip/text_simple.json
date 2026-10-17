@@ -1,0 +1,13 @@
+{
+  "class_order": ["Angry", "Disgusted", "Fearful", "Happy", "Neutral", "Sad", "Surprised"],
+  "source": "manual simple class-prototype baseline, 2026-10-17; not per-image captions",
+  "prompts": {
+    "Angry": ["A face expressing anger.", "A photo of an angry facial expression."],
+    "Disgusted": ["A face expressing disgust.", "A photo of a disgusted facial expression."],
+    "Fearful": ["A face expressing fear.", "A photo of a fearful facial expression."],
+    "Happy": ["A face expressing happiness.", "A photo of a happy facial expression."],
+    "Neutral": ["A face with a neutral expression.", "A photo of a neutral facial expression."],
+    "Sad": ["A face expressing sadness.", "A photo of a sad facial expression."],
+    "Surprised": ["A face expressing surprise.", "A photo of a surprised facial expression."]
+  }
+}

@@ -60,6 +60,9 @@ def strict_vim_load(core,spec):
                                    'target_cls':core.patch_embed.num_patches//2,'method':'bicubic align_corners=False patches only'}}
 
 def make_student(cfg,initialize=True):
+    if cfg.get('schema_version')==3:
+        from .official_experiments import build_student
+        return build_student(cfg,initialize=initialize)
     if cfg['student']['architecture'].startswith('vmamba_'):
         return make_vmamba_student(cfg,initialize=initialize)
     from open_clip.vision_mamba_clip.official_vim import create_official_vim,OfficialPatchAdapter,MambaCE

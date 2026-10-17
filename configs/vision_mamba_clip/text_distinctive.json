@@ -1,0 +1,13 @@
+{
+  "class_order": ["Angry", "Disgusted", "Fearful", "Happy", "Neutral", "Sad", "Surprised"],
+  "source": "manual candidate descriptions derived from user-provided analysis, 2026-10-17; common possible expressions, not verified image-level AU annotations",
+  "prompts": {
+    "Angry": ["An angry expression may show lowered brows drawn together and tense lips.", "A face expressing anger, with a tense brow and a tightened mouth."],
+    "Disgusted": ["A disgusted expression may show a wrinkled nose and a raised upper lip.", "A face expressing disgust, with tension around the nose and upper lip."],
+    "Fearful": ["A fearful expression may show brows raised and drawn together, tense eyes, and stretched lips.", "A face expressing fear, with worried brows and a tense, stretched mouth."],
+    "Happy": ["A happy expression may show raised mouth corners, lifted cheeks, and narrowed smiling eyes.", "A face expressing happiness, with a smile and raised cheeks."],
+    "Neutral": ["A neutral expression may show relaxed brows, relaxed cheeks, and resting lips.", "A face with a neutral expression and no marked tension around the eyes or mouth."],
+    "Sad": ["A sad expression may show raised inner brows and lowered mouth corners.", "A face expressing sadness, with a downturned mouth and a worried inner brow."],
+    "Surprised": ["A surprised expression may show raised brows, wide open eyes, and a dropped jaw.", "A face expressing surprise, with lifted brows and an open, relaxed mouth."]
+  }
+}
