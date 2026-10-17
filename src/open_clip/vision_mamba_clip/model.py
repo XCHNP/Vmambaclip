@@ -12,6 +12,46 @@ import torch.nn.functional as F
 from .adapters import VimAdapter
 
 
+class SASF(nn.Module):
+    """Restore raster-ordered patch tokens and add multiscale spatial context.
+
+    The caller must remove special tokens and supply the actual patch grid;
+    inferring a square from the token count can silently scramble geometry.
+    """
+
+    def __init__(self, in_dim: int, out_dim: int):
+        super().__init__()
+        self.in_dim = int(in_dim)
+        self.branches = nn.ModuleList([
+            nn.Sequential(
+                nn.Conv2d(in_dim, in_dim, 3, padding=d, dilation=d,
+                          groups=in_dim, bias=False),
+                nn.Conv2d(in_dim, in_dim, 1, bias=False),
+                nn.GELU(),
+            ) for d in (1, 2, 3)
+        ])
+        self.fusion = nn.Sequential(
+            nn.Conv2d(4 * in_dim, in_dim, 1, bias=False),
+            nn.GroupNorm(1, in_dim),
+            nn.GELU(),
+        )
+        self.proj = nn.Linear(in_dim, out_dim)
+
+    def forward(self, tokens: Tensor, height: Optional[int] = None, width: Optional[int] = None):
+        if tokens.ndim == 4:
+            if tokens.shape[1] != self.in_dim:
+                raise ValueError(f"SASF expects [B,{self.in_dim},H,W]")
+            height, width = tokens.shape[-2:]
+            tokens = tokens.flatten(2).transpose(1, 2)
+        if tokens.ndim != 3 or tokens.shape[-1] != self.in_dim:
+            raise ValueError(f"SASF expects [B,N,{self.in_dim}], got {tuple(tokens.shape)}")
+        if height is None or width is None or height <= 0 or width <= 0 or tokens.shape[1] != height * width:
+            raise ValueError("SASF patch count must match height * width; exclude CLS and token dropout")
+        x = tokens.transpose(1, 2).reshape(tokens.shape[0], self.in_dim, height, width)
+        enhanced = x + self.fusion(torch.cat([x] + [branch(x) for branch in self.branches], dim=1))
+        return enhanced.flatten(2).transpose(1, 2), self.proj(enhanced.mean(dim=(2, 3)))
+
+
 @dataclass
 class StudentOutput:
     fused_raw: Tensor
@@ -87,7 +127,7 @@ class StudentClassifier(nn.Module):
 
 
 class HybridVisionMambaStudent(nn.Module):
-    """Main student path: projected states, query aggregation, CNN and concat fusion."""
+    """Vim/CNN student with optional SASF and spatial cross-branch attention."""
 
     aliases = ("e", "m", "l")
 
@@ -106,6 +146,8 @@ class HybridVisionMambaStudent(nn.Module):
         cnn_channels: Optional[int] = None,
         use_cnn: bool = True,
         compute_logits: bool = True,
+        use_sasf: bool = False,
+        fusion: str = "concat_projection",
     ) -> None:
         super().__init__()
         if tuple(state_dims.keys()) != self.aliases:
@@ -120,6 +162,14 @@ class HybridVisionMambaStudent(nn.Module):
         self.epsilon = float(epsilon)
         self.use_cnn = bool(use_cnn)
         self.compute_logits = bool(compute_logits)
+        self.use_sasf = bool(use_sasf)
+        if fusion not in {"concat_projection", "mamba_cnn_cross_attention"}:
+            raise ValueError(f"Unsupported fusion: {fusion}")
+        if fusion == "mamba_cnn_cross_attention" and not self.use_cnn:
+            raise ValueError("Cross-branch attention requires the CNN branch")
+        if self.use_sasf and getattr(vim, "feature_layout", None) != "BCHW" and not callable(getattr(vim, "patch_grid", None)):
+            raise ValueError("SASF requires a Vim adapter exposing patch_grid(images)")
+        self.fusion = fusion
 
         self.state_projections = nn.ModuleDict(
             {name: nn.Linear(2 * int(state_dims[name]), common_dim) for name in self.aliases}
@@ -156,11 +206,26 @@ class HybridVisionMambaStudent(nn.Module):
         with torch.no_grad():
             self.text_to_classifier.weight.copy_(torch.eye(common_dim))
 
+        # Construct additions last so legacy module initialization stays identical.
+        self.sasf = SASF(int(state_dims["l"]), common_dim) if self.use_sasf else None
+        if self.use_sasf:
+            self.sasf_alpha = nn.Parameter(torch.zeros(()))
+        else:
+            self.register_parameter("sasf_alpha", None)
+        if self.fusion == "mamba_cnn_cross_attention":
+            self.local_cross_attention = nn.MultiheadAttention(common_dim, attention_heads, batch_first=True)
+            self.local_fusion_norm = nn.LayerNorm(common_dim)
+        else:
+            self.local_cross_attention = None
+            self.local_fusion_norm = None
+
     def _project_states(self, hidden: Mapping[str, Tensor]):
         raw: Dict[str, Tensor] = {}
         norm: Dict[str, Tensor] = {}
         for name in self.aliases:
             value = hidden[name]
+            if value.ndim == 4:
+                value = value.flatten(2).transpose(1, 2)
             pooled = torch.cat((value.mean(dim=1), value.amax(dim=1)), dim=-1)
             raw[name] = self.state_projections[name](pooled)
             norm[name] = F.normalize(raw[name].float(), dim=-1).to(raw[name].dtype)
@@ -172,7 +237,7 @@ class HybridVisionMambaStudent(nn.Module):
             zeros = images.new_zeros((batch, self.common_dim))
             patch_norm = images.new_zeros((batch, 1, self.common_dim))
             attention = images.new_ones((batch, 1, 1, 1))
-            return zeros, zeros, patch_norm, attention
+            return zeros, zeros, patch_norm, attention, patch_norm
 
         cnn_raw = self.cnn_backbone(images)
         if cnn_raw.ndim != 4 or cnn_raw.shape[1] != self.cnn_channels:
@@ -186,7 +251,13 @@ class HybridVisionMambaStudent(nn.Module):
         distill = (attention * projected).sum(dim=(2, 3)) / denominator
         patch_raw = projected.flatten(2).transpose(1, 2)
         patch_norm = F.normalize(patch_raw.float(), dim=-1).to(patch_raw.dtype)
-        return descriptor, distill, patch_norm, attention
+        # Preserve locations for K/V. Normalize attention mass to keep token scale
+        # independent of the number of CNN positions and the sparsity penalty.
+        local_tokens = patch_raw
+        if self.local_cross_attention is not None:
+            relative_attention = attention / attention.mean(dim=(2, 3), keepdim=True).clamp_min(self.epsilon)
+            local_tokens = (projected * relative_attention).flatten(2).transpose(1, 2)
+        return descriptor, distill, patch_norm, attention, local_tokens
 
     def forward(self, images: Tensor) -> StudentOutput:
         hidden = self.vim(images)
@@ -194,8 +265,20 @@ class HybridVisionMambaStudent(nn.Module):
         context = torch.stack([states_raw[name] for name in self.aliases], dim=1)
         query = self.global_query.expand(images.shape[0], -1, -1)
         mamba_global = self.cross_attention(query, context, context, need_weights=False)[0][:, 0]
+        if self.use_sasf:
+            if hidden["l"].ndim == 4:
+                _, spatial_global = self.sasf(hidden["l"])
+            else:
+                height, width = self.vim.patch_grid(images)
+                _, spatial_global = self.sasf(hidden["l"], height, width)
+            mamba_global = mamba_global + self.sasf_alpha.tanh() * spatial_global
 
-        cnn_descriptor, cnn_distill, patch_norm, attention = self._local_features(images)
+        cnn_descriptor, cnn_distill, patch_norm, attention, local_tokens = self._local_features(images)
+        if self.local_cross_attention is not None:
+            attended = self.local_cross_attention(
+                mamba_global.unsqueeze(1), local_tokens, local_tokens, need_weights=False,
+            )[0][:, 0]
+            mamba_global = self.local_fusion_norm(mamba_global + attended)
         fusion_input = torch.cat((mamba_global, cnn_descriptor), dim=-1)
         fused_raw = self.fusion_projection(fusion_input)
         fused_norm = F.normalize(fused_raw.float(), dim=-1).to(fused_raw.dtype)

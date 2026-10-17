@@ -1,0 +1,13 @@
+{
+  "repository": "https://github.com/MzeroMiko/VMamba",
+  "commit": "2ed52ead062a51a64521ed3871d52914bf532876",
+  "source_file": "vmamba.py",
+  "source_sha256_lf": "d774131987afade5ccf8e6db9edeb54cc2cd5936fcbbd6fd06af8e5a4de9ccb5",
+  "model_name": "vmamba_tiny_s1l8",
+  "checkpoint_url": "https://github.com/MzeroMiko/VMamba/releases/download/%23v2cls/vssm1_tiny_0230s_ckpt_epoch_264.pth",
+  "checkpoint_sha256": "d855b57224a652bc692804932f88dc3a39b9028e64be99f745a7fd6792ca672a",
+  "upstream_source_sha256_lf": "572207a2b6553ff85d81b602eebda2041623073f01fc0c6d1280c5a2add040f6",
+  "local_patches": [
+    "Guard Triton-only kernel declarations with WITH_TRITON; SS2D/reference/CUDA math unchanged."
+  ]
+}

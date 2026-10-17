@@ -67,13 +67,19 @@ def _build_student(config, device, image_size, common_dim):
         raise ValueError(f"Vim initialization metadata requires {sorted(required)}")
     if student_cfg.get("checkpoint") and not initialization["pretrained_loaded"]:
         raise RuntimeError("Vim checkpoint was configured but the factory reports it was not loaded")
-    vim = VimAdapter(
-        backbone,
-        backbone_is_bidirectional=True,
-        backbone_identity=initialization["identity"],
-        layer_indices=student_cfg.get("layer_indices"),
-        num_special_tokens=student_cfg["num_special_tokens"],
-    ).to(device)
+    from open_clip.vision_mamba_clip.official_vim import OfficialBackbone, OfficialPatchAdapter
+    if isinstance(backbone, OfficialBackbone):
+        vim = OfficialPatchAdapter(backbone).to(device)
+        if student_cfg.get("layer_indices") is not None and tuple(student_cfg["layer_indices"]) != vim.layer_indices:
+            raise ValueError("Official Vim assembly requires the final three layers")
+    else:
+        vim = VimAdapter(
+            backbone,
+            backbone_is_bidirectional=True,
+            backbone_identity=initialization["identity"],
+            layer_indices=student_cfg.get("layer_indices"),
+            num_special_tokens=student_cfg["num_special_tokens"],
+        ).to(device)
     with torch.no_grad():
         hidden = vim(torch.zeros(2, 3, image_size, image_size, device=device))
     state_dims = {name: int(value.shape[-1]) for name, value in hidden.items()}
@@ -86,6 +92,8 @@ def _build_student(config, device, image_size, common_dim):
         use_coords=student_cfg["use_coords"],
         epsilon=config["epsilon"],
         use_cnn=student_cfg["use_cnn"],
+        use_sasf=student_cfg.get("use_sasf", False),
+        fusion=student_cfg.get("fusion", "concat_projection"),
     ).to(device)
     return student, initialization
 
@@ -224,6 +232,7 @@ def build(*, config, stage: str, device):
         ),
         "attention": config["student"]["attention_parameterization"],
         "fusion": config["student"]["fusion"],
+        "use_sasf": config["student"].get("use_sasf", False),
         "classifier_input": config["student"]["classifier_input"],
     }
     return bundle

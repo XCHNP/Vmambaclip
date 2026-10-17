@@ -52,10 +52,19 @@ def probes(model):
     for name,p in model.named_parameters():
         family=name.split('.')[0]
         score=1
-        if '.core.layers.' in name:
+        if '.backbone.layers.' in name and '.blocks.' in name:
+            parts=name.split('.backbone.layers.')[1].split('.')
+            family='vmamba.stage_'+parts[0]+'.block_'+parts[2]
+            score=100 if name.endswith('op.in_proj.weight') else 1
+        elif '.core.layers.' in name:
             parts=name.split('.core.layers.')[1].split('.')
             family='vim.layer_'+parts[0]+'.'+parts[1]
             score=100 if name.endswith(('in_proj.weight','norm.weight')) else 1
+        elif family in ['vim','backbone'] and '.backbone.patch_embed.' in name:
+            family='vmamba.patch_embed'; score=100 if name.endswith('0.weight') else 1
+        elif family in ['vim','backbone'] and '.backbone.layers.' in name:
+            family='vmamba.stage_'+name.split('.backbone.layers.')[1].split('.')[0]+'.downsample'
+            score=100 if name.endswith('1.weight') else 1
         elif family in ['vim','backbone']:
             family='vim.'+('patch_embed' if '.patch_embed.' in name else 'final_norm' if '.norm_f.' in name else 'positions' if 'pos_embed' in name else 'cls')
             score=100 if name.endswith('proj.weight') else 1

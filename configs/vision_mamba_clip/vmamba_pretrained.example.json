@@ -1,0 +1,8 @@
+{
+  "vmamba": {
+    "path": "<云电脑中 VMamba-T s1l8 权重的绝对路径>",
+    "sha256": "d855b57224a652bc692804932f88dc3a39b9028e64be99f745a7fd6792ca672a",
+    "model_name": "vmamba_tiny_s1l8"
+  },
+  "output_root": "<新的 VMamba 实验输出目录，不使用旧 Vim 输出目录>"
+}

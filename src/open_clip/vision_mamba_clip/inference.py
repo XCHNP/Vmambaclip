@@ -52,7 +52,25 @@ def load_student_for_inference(
     Returns:
         (model, class_order, transform, metadata)
     """
-    payload = _load_payload(checkpoint_path, map_location=device)
+    payload = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+    if isinstance(payload, dict) and "config" in payload.get("identity", {}):
+        from vim_v2.models import make_student
+        from vim_v2.common import fingerprint
+        config = payload["identity"]["config"]
+        if payload["identity"].get("config_sha256") != fingerprint(config):
+            raise ValueError("Student checkpoint configuration hash mismatch")
+        student, _ = make_student(config, initialize=False)
+        student.load_state_dict(payload["model"], strict=True)
+        if config["student"]["architecture"].startswith("vmamba_"):
+            encoder = student.vim if hasattr(student, "vim") else student.backbone
+            encoder.set_grad_checkpointing(False)
+        student = student.to(device).eval()
+        preprocessing = config["preprocess"]
+        transform = _build_transform({"size": preprocessing["eval_crop_size"],
+                                      "mean": preprocessing["student_mean"],
+                                      "std": preprocessing["student_std"]}, config["student"]["input_size"])
+        return student, config["class_order"], transform, payload["identity"]
+    payload = _load_payload(checkpoint_path, map_location="cpu")
     metadata = payload["metadata"]
     class_order = metadata["class_order"]
     common_dim = int(metadata["common_dim"])
@@ -88,6 +106,8 @@ def load_student_for_inference(
         common_dim,
         num_classes,
         compute_logits=True,
+        use_sasf=metadata.get("use_sasf", False),
+        fusion=metadata.get("fusion", "concat_projection"),
     )
 
     student.load_state_dict(payload["model"], strict=True)
@@ -114,7 +134,7 @@ def predict_single(
     """
     tensor = transform(image).unsqueeze(0).to(device)
     output = model(tensor)
-    logits = output.logits[0].float()
+    logits = (output if isinstance(output, Tensor) else output.logits)[0].float()
     probs = torch.softmax(logits, dim=0)
     pred_idx = int(logits.argmax().item())
 
@@ -146,7 +166,7 @@ def predict_batch(
         List of prediction dicts per sample.
     """
     output = model(images)
-    logits = output.logits.float()
+    logits = (output if isinstance(output, Tensor) else output.logits).float()
     probs = torch.softmax(logits, dim=1)
     pred_indices = logits.argmax(dim=1)
 

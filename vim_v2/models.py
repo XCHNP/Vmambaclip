@@ -60,6 +60,8 @@ def strict_vim_load(core,spec):
                                    'target_cls':core.patch_embed.num_patches//2,'method':'bicubic align_corners=False patches only'}}
 
 def make_student(cfg,initialize=True):
+    if cfg['student']['architecture'].startswith('vmamba_'):
+        return make_vmamba_student(cfg,initialize=initialize)
     from open_clip.vision_mamba_clip.official_vim import create_official_vim,OfficialPatchAdapter,MambaCE
     from open_clip.vision_mamba_clip.model import HybridVisionMambaStudent,ResNet18ThroughLayer3
     from torchvision.models import resnet18
@@ -101,9 +103,62 @@ def make_student(cfg,initialize=True):
             torch.random.default_generator.manual_seed(cfg['head_seed'])
             adapter=OfficialPatchAdapter(backbone)
             if list(adapter.layer_indices)!=student['layer_indices']: raise ValueError('Hook layers changed')
-            model=HybridVisionMambaStudent(adapter,{'e':384,'m':384,'l':384},common_dim=768,num_classes=7,attention_heads=8,cnn_backbone=cnn)
+            model=HybridVisionMambaStudent(adapter,{'e':384,'m':384,'l':384},common_dim=768,num_classes=7,attention_heads=8,cnn_backbone=cnn,
+                use_sasf=student.get('use_sasf',False),fusion=student.get('fusion','concat_projection'))
+            report['fusion']=model.fusion
+            report['sasf']={'enabled':model.use_sasf,'source':'layer23 patches without CLS','dilations':[1,2,3],
+                            'input_dim':384,'output_dim':768,'gate':'tanh(alpha), initialized at zero'}
             model.text_to_classifier.requires_grad_(False)
             core.norm_f.requires_grad_(False)  # unused by legacy Hybrid hook readout
+    report['classifier_sha256']=tensor_digest(model.classifier.state_dict())
+    report['initial_state_sha256']=tensor_digest(model.state_dict())
+    return model,report
+
+
+def make_vmamba_student(cfg,initialize=True):
+    from open_clip.vision_mamba_clip.official_vmamba import create_official_vmamba,VMambaNativeCE
+    from open_clip.vision_mamba_clip.model import HybridVisionMambaStudent,ResNet18ThroughLayer3
+    from torchvision.models import resnet18
+    student=cfg['student']; native=student['architecture']=='vmamba_native_ce'
+    spec=student['pretrained']
+    pretrained=initialize and student['initialization']=='pretrained'
+    if pretrained and spec.get('model_name')!=student['official_model_name']:
+        raise ValueError('VMamba checkpoint model identity mismatch')
+    with torch.random.fork_rng(devices=[]):
+        torch.random.default_generator.manual_seed(cfg['seed'])
+        adapter,meta=create_official_vmamba(
+            checkpoint_path=check_asset(spec) if pretrained else None,
+            checkpoint_sha256=spec['sha256'] if pretrained else None,
+            model_name=student['official_model_name'],drop_path_rate=student['drop_path_rate'],
+            gradient_checkpointing=student['gradient_checkpointing'],keep_final_norm=native)
+    if meta['commit']!=student['source_revision'] or list(adapter.layer_indices)!=student['stage_indices']:
+        raise ValueError('VMamba source/stage configuration mismatch')
+    if not initialize: meta['initialization_source']='strict student reconstruction; weights supplied by checkpoint'
+    report={'initialization':student['initialization'],'official':meta,
+            'stage_indices':list(adapter.layer_indices),'state_dims':dict(adapter.state_dims),
+            'backbone_initialization_sha256':tensor_digest(adapter.state_dict())}
+    with torch.random.fork_rng(devices=[]):
+        torch.random.default_generator.manual_seed(cfg['head_seed'])
+        if native:
+            model=VMambaNativeCE(adapter)
+        else:
+            cnn=ResNet18ThroughLayer3()
+            if initialize:
+                spec_cnn=student['cnn_pretrained']
+                if spec_cnn['sha256']!=CNN_SHA: raise ValueError('Expected torchvision ImageNet ResNet18 V1 checkpoint')
+                source=resnet18(weights=None)
+                source.load_state_dict(torch.load(check_asset(spec_cnn),map_location='cpu',weights_only=True),strict=True)
+                cnn.stem=nn.Sequential(source.conv1,source.bn1,source.relu,source.maxpool)
+                cnn.layer1=source.layer1; cnn.layer2=source.layer2; cnn.layer3=source.layer3
+                del source
+                report['cnn']={'source':spec_cnn,'strict_full_resnet18_load':True,'retained':'stem through layer3'}
+            torch.random.default_generator.manual_seed(cfg['head_seed'])
+            model=HybridVisionMambaStudent(adapter,adapter.state_dims,768,7,cnn_backbone=cnn,
+                use_sasf=student['use_sasf'],fusion=student['fusion'])
+            model.text_to_classifier.requires_grad_(False)
+            report['fusion']=model.fusion
+            report['sasf']={'enabled':model.use_sasf,'source':'stage3 native BCHW map','dilations':[1,2,3],
+                            'input_dim':768,'output_dim':768,'gate':'tanh(alpha), initialized at zero'}
     report['classifier_sha256']=tensor_digest(model.classifier.state_dict())
     report['initial_state_sha256']=tensor_digest(model.state_dict())
     return model,report

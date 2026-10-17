@@ -114,6 +114,9 @@ def main():
     sub=parser.add_subparsers(dest='cmd',required=True)
     q=sub.add_parser('inventory'); q.add_argument('--output',required=True)
     q=sub.add_parser('prepare-v2'); q.add_argument('--paths',required=True); q.add_argument('--output',required=True)
+    q.add_argument('--use-sasf',action='store_true'); q.add_argument('--cross-branch-fusion',action='store_true')
+    q=sub.add_parser('prepare-vmamba'); q.add_argument('--paths',required=True); q.add_argument('--output',required=True)
+    q.add_argument('--no-sasf',action='store_true'); q.add_argument('--legacy-fusion',action='store_true')
     for command in ['validate-plan','budget','lock-plan','aggregate','run-plan','verify']:
         q=sub.add_parser(command); q.add_argument('--plan',required=True)
         if command=='validate-plan': q.add_argument('--dry-run',action='store_true')
@@ -133,7 +136,8 @@ def main():
     if hasattr(a,'config'):
         c=read(a.config); root=Path(c['output']).parents[1]/'acceptance'; root.mkdir(parents=True,exist_ok=True); name=c['run_id'].replace('/','__')
     if a.cmd=='inventory': result={'environment':environment(),'code':code_identity()}; atomic_json(a.output,result)
-    elif a.cmd=='prepare-v2': result=prepare(a.paths,a.output)
+    elif a.cmd=='prepare-v2': result=prepare(a.paths,a.output,use_sasf=a.use_sasf,cross_branch_fusion=a.cross_branch_fusion)
+    elif a.cmd=='prepare-vmamba': result=prepare(a.paths,a.output,backbone='vmamba',use_sasf=not a.no_sasf,cross_branch_fusion=not a.legacy_fusion)
     elif a.cmd=='validate-plan': result=preflight(a.plan); atomic_json(Path(a.plan).with_name('preflight.json'),result)
     elif a.cmd=='budget': result=budget(a.plan); atomic_json(Path(a.plan).with_name('budget.json'),result)
     elif a.cmd=='lock-plan': result=lock_plan(a.plan)

@@ -12,6 +12,8 @@ import torch
 from torch import nn
 from torch.utils.checkpoint import checkpoint
 
+from .adapters import patch_grid_from_conv
+
 MODEL_NAME = "vim_small_patch16_224_bimambav2_final_pool_mean_abs_pos_embed_with_midclstok_div2"
 
 
@@ -90,6 +92,9 @@ class OfficialPatchAdapter(nn.Module):
                 raise RuntimeError("Patch extraction retained an incorrect CLS or patch count")
         self._captured.clear()
         return result
+
+    def patch_grid(self, images):
+        return patch_grid_from_conv(self.backbone.core, images)
 
 
 class MambaCE(nn.Module):

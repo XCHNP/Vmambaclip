@@ -34,8 +34,12 @@ def validate_config(config: Mapping) -> None:
         raise ValueError("The main teacher must be CLIP ViT-L/14")
     if config["student"]["family"] != "bidirectional_vim":
         raise ValueError("The main student must use bidirectional Vim")
-    if config["student"]["fusion"] != "concat_projection":
-        raise ValueError("The main fusion must be concat_projection")
+    if config["student"]["fusion"] not in {"concat_projection", "mamba_cnn_cross_attention"}:
+        raise ValueError("Unsupported student fusion")
+    if type(config["student"].get("use_sasf", False)) is not bool:
+        raise ValueError("student.use_sasf must be boolean")
+    if config["student"]["fusion"] == "mamba_cnn_cross_attention" and not config["student"].get("use_cnn", True):
+        raise ValueError("Cross-branch attention requires CNN features")
     if config["student"].get("use_cnn", True) and config["student"]["cnn"] != "resnet18_layer3":
         raise ValueError("The default local branch must be ResNet18 through layer3")
     if not config["student"].get("use_cnn", True) and float(config["stage2"]["lambda_au"]) != 0:

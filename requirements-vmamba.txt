@@ -1,0 +1,6 @@
+# Install the project's normal requirements first. Official SS2D reference path
+# works on CPU; Linux GPU acceleration needs matching Triton + mamba-ssm CUDA builds.
+fvcore>=0.1.5
+einops
+# Versions must match the cloud's torch/CUDA/Python; do not install a Vim-only fork
+# as a substitute for VMamba. See docs/VMAMBA_SASF_REVIEW_2026-10-17.md.

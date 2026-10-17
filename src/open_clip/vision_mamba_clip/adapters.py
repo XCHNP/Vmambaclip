@@ -145,6 +145,24 @@ def _resolve_layer_modules(backbone: nn.Module) -> Sequence[nn.Module]:
     )
 
 
+def patch_grid_from_conv(backbone: nn.Module, images: Tensor):
+    """Grid of a raster-flattened Conv2d patch embed, including overlap/padding."""
+    patch_embed = getattr(backbone, "patch_embed", None)
+    projection = getattr(patch_embed, "proj", None)
+    if not isinstance(projection, nn.Conv2d) or isinstance(projection.padding, str):
+        raise ValueError("SASF requires an explicit Conv2d patch embedding or a custom patch_grid adapter")
+    if getattr(backbone, "flip_img_sequences_ratio", 0) > 0:
+        raise ValueError("SASF requires raster patch order without sequence flipping")
+    grid = tuple(
+        (size + 2 * pad - dilation * (kernel - 1) - 1) // stride + 1
+        for size, pad, dilation, kernel, stride in zip(
+            images.shape[-2:], projection.padding, projection.dilation,
+            projection.kernel_size, projection.stride,
+        )
+    )
+    return grid
+
+
 class VimAdapter(nn.Module):
     """Extract patch tokens from the final three encoder layers of a real Vim.
 
@@ -245,4 +263,7 @@ class VimAdapter(nn.Module):
         for handle in self._hook_handles:
             handle.remove()
         self._hook_handles.clear()
+
+    def patch_grid(self, images: Tensor):
+        return patch_grid_from_conv(self.backbone, images)
 

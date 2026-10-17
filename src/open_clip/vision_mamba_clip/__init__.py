@@ -19,7 +19,7 @@ from .losses import (
     teacher_classification_loss,
     teacher_contrastive_loss,
 )
-from .model import HybridVisionMambaStudent, StudentOutput
+from .model import HybridVisionMambaStudent, SASF, StudentOutput
 from .metrics import ClassificationMetrics
 from .stages import (
     configure_student_stage,
@@ -34,11 +34,15 @@ from .text_anchors import (
     load_prompt_schema,
 )
 from .vim_backbone import BidirectionalVim, create_vim
+from .official_vmamba import VMambaSpatialAdapter, create_official_vmamba
 
 __all__ = [
     "TeacherAdapter",
     "VimAdapter",
     "HybridVisionMambaStudent",
+    "SASF",
+    "VMambaSpatialAdapter",
+    "create_official_vmamba",
     "StudentOutput",
     "ClassificationMetrics",
     "Stage1Loss",

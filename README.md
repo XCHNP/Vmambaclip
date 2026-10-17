@@ -1,5 +1,17 @@
 # OpenCLIP
 
+## 当前 FER 学生开发入口（2026-10-17）
+
+当前目标为 **官方 VMamba-T s1l8（SS2D）+ CNN + SASF**，使用 VMamba Query 与 CNN 空间 Key/Value 的跨分支注意力。源码、权重核验、配置和测试说明见 [接入与审查记录](docs/VMAMBA_SASF_REVIEW_2026-10-17.md)。旧 Vim 配置保留为历史实验记录。
+
+在填好真实云端资产路径并选择新的输出目录后，仅生成新计划：
+
+```bash
+python -m vim_v2 prepare-vmamba --paths paths.vmamba.json --output configs/vision_mamba_clip/vmamba_sasf
+```
+
+该命令不启动训练。正式运行需完成新模型的资产和 GPU 验收。
+
 [[Paper]](https://arxiv.org/abs/2212.07143) [[Citations]](#citing) [[Clip Colab]](https://colab.research.google.com/github/mlfoundations/open_clip/blob/master/docs/Interacting_with_open_clip.ipynb) [[Coca Colab]](https://colab.research.google.com/github/mlfoundations/open_clip/blob/master/docs/Interacting_with_open_coca.ipynb)
 [![pypi](https://img.shields.io/pypi/v/open_clip_torch.svg)](https://pypi.python.org/pypi/open_clip_torch)
 

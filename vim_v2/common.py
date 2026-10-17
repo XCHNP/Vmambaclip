@@ -59,6 +59,7 @@ def environment():
 
 def code_identity():
     files=list((PROJECT/'vim_v2').glob('*.py'))
-    files += [PROJECT/'src/open_clip/vision_mamba_clip'/x for x in ['official_vim.py','model.py','adapters.py','data.py']]
+    files += [PROJECT/'src/open_clip/vision_mamba_clip'/x for x in ['official_vim.py','official_vmamba.py','model.py','adapters.py','data.py']]
     files += [PROJECT/'third_party/Vim/vim/models_mamba.py',PROJECT/'third_party/Vim/official_source.json']
+    files += [PROJECT/'third_party/VMamba/vmamba.py',PROJECT/'third_party/VMamba/official_source.json']
     return {str(p.relative_to(PROJECT)):sha(p) for p in files}

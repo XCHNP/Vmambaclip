@@ -49,18 +49,31 @@ def audit_init(c,gpu=False):
     report['parameters']=sum(p.numel() for p in model.parameters())
     if gpu:
         with gpu_lease(Path(c['output']).parents[1]):
-            from open_clip.vision_mamba_clip.official_vim import create_official_vim
+            vmamba=c['student']['architecture'].startswith('vmamba_')
             for size in [224,256]:
-                backbone,_=create_official_vim(img_size=size)
-                if c['student']['initialization']=='pretrained': strict_vim_load(backbone.core,c['student']['pretrained'])
-                backbone.cuda().eval(); x=torch.randn(2,3,size,size,device='cuda')
-                with torch.no_grad(): expected=backbone.core.forward_features(x); actual=backbone(x)
+                if vmamba:
+                    from open_clip.vision_mamba_clip.official_vmamba import create_official_vmamba
+                    spec=c['student']['pretrained']; pretrained=c['student']['initialization']=='pretrained'
+                    backbone,_=create_official_vmamba(checkpoint_path=spec['path'] if pretrained else None,
+                        checkpoint_sha256=spec['sha256'] if pretrained else None,keep_final_norm=True)
+                    backbone.cuda().eval(); x=torch.randn(2,3,size,size,device='cuda')
+                    with torch.no_grad():
+                        direct=backbone.backbone.patch_embed(x)
+                        for layer in backbone.backbone.layers: direct=layer(direct)
+                        expected=backbone.final_norm(direct).mean((2,3)); actual=backbone.forward_features(x)
+                    report['native_'+str(size)]={'shape':list(actual.shape),'max_abs_error':float((actual-expected).abs().max()),'readout':'official final norm and spatial mean, no CLS'}
+                else:
+                    from open_clip.vision_mamba_clip.official_vim import create_official_vim
+                    backbone,_=create_official_vim(img_size=size)
+                    if c['student']['initialization']=='pretrained': strict_vim_load(backbone.core,c['student']['pretrained'])
+                    backbone.cuda().eval(); x=torch.randn(2,3,size,size,device='cuda')
+                    with torch.no_grad(): expected=backbone.core.forward_features(x); actual=backbone(x)
+                    report['native_'+str(size)]={'shape':list(actual.shape),'max_abs_error':float((actual-expected).abs().max()),'cls_index':backbone.cls_index}
                 torch.testing.assert_close(actual,expected,atol=1e-5,rtol=1e-4)
-                report['native_'+str(size)]={'shape':list(actual.shape),'max_abs_error':float((actual-expected).abs().max()),'cls_index':backbone.cls_index}
                 del backbone,x
             # Test actual Hybrid hooks under activation checkpointing, including gradients.
             model.cuda().train(); x=next(iter(loader(c,'train')))['image_student'][:2].cuda()
-            backbone=model.backbone if hasattr(model,'backbone') else model.vim.backbone
+            backbone=model.backbone if hasattr(model,'backbone') else (model.vim if vmamba else model.vim.backbone)
             saved_rng=rng_state(); states=[]; outputs=[]
             initial={k:v.detach().clone() for k,v in model.state_dict().items()}
             for enabled in [False,False,True]:
